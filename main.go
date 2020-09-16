@@ -12,6 +12,33 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+func main() {
+	flag.Parse()
+	if flag.NArg() != 1 {
+		log.Fatal("missing package spec")
+	}
+	// split the package package and version
+	spec := flag.Arg(0)
+	pkgpath, version := SplitSpec(spec)
+	// find the module root
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedModule,
+	}
+	pkgs, err := packages.Load(cfg, pkgpath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(pkgs) == 0 || pkgs[0].Module == nil {
+		log.Fatalf("failed to find module: %s", pkgpath)
+	}
+	pkg := pkgs[0]
+	// find the module path for the specified version
+	modpath := WithPathMajor(pkg.Module.Path, semver.Major(version))
+	fmt.Println(
+		path.Join(modpath, strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)),
+	)
+}
+
 func SplitSpec(spec string) (path, version string) {
 	parts := strings.SplitN(spec, "@", 2)
 	if len(parts) == 2 {
@@ -41,31 +68,4 @@ func WithPathMajor(path, major string) string {
 		path += "/"
 	}
 	return path + major
-}
-
-func main() {
-	flag.Parse()
-	if flag.NArg() != 1 {
-		log.Fatal("missing package spec")
-	}
-	// split the package package and version
-	spec := flag.Arg(0)
-	pkgpath, version := SplitSpec(spec)
-	// find the module root
-	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedModule,
-	}
-	pkgs, err := packages.Load(cfg, pkgpath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(pkgs) == 0 || pkgs[0].Module == nil {
-		log.Fatalf("failed to find module: %s", pkgpath)
-	}
-	pkg := pkgs[0]
-	// find the module path for the specified version
-	modpath := WithPathMajor(pkg.Module.Path, semver.Major(version))
-	fmt.Println(
-		path.Join(modpath, strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)),
-	)
 }
