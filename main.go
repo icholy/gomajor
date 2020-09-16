@@ -28,6 +28,12 @@ func WithPathMajor(path, major string) string {
 	if prefix, _, ok := module.SplitPathVersion(path); ok {
 		path = prefix
 	}
+	if strings.HasPrefix(path, "gopkg.in/") {
+		if major == "" {
+			major = "v1"
+		}
+		return path + "." + major
+	}
 	if major == "v0" || major == "v1" || major == "" {
 		return path
 	}
