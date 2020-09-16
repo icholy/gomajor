@@ -59,6 +59,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if len(pkgs) == 0 || pkgs[0].Module == nil {
+		log.Fatalf("failed to find module: %s", pkgpath)
+	}
 	pkg := pkgs[0]
 	// find the module path for the specified version
 	modpath := WithPathMajor(pkg.Module.Path, semver.Major(version))
