@@ -42,7 +42,7 @@ func main() {
 	}
 	// go get
 	if goget {
-		spec := fmt.Sprintf("%s@%s", pkg.Path(version), version)
+		spec := fmt.Sprintf("%s@%s", pkg.Path(version), semver.Canonical(version))
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
 		cmd.Stdout = os.Stdout
