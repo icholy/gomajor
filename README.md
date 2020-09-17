@@ -18,3 +18,4 @@ Warning:
 * This tool has no dry-run or undo feature. Commit before running.
 * If you have multiple major versions imported, ALL of them will be rewritten.
 * `@latest` and `@master` are not supported.
+* gopkg.in imports are not supported.
