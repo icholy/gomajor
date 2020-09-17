@@ -35,14 +35,11 @@ func Load(pkgpath string) (*Package, error) {
 		return nil, err
 	}
 	if len(pkgs) == 0 {
-		return nil, fmt.Errorf("failed to file module: %s", pkgpath)
+		return nil, fmt.Errorf("failed to find module: %s", pkgpath)
 	}
 	pkg := pkgs[0]
 	if len(pkg.Errors) > 0 {
 		return nil, pkg.Errors[0]
-	}
-	if packages.PrintErrors(pkgs) > 0 {
-		os.Exit(1)
 	}
 	// remove the existing version if there is one
 	modprefix := pkg.Module.Path
