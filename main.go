@@ -57,8 +57,13 @@ func PackageWithVersion(pkgpath string, version string) (string, error) {
 	if packages.PrintErrors(pkgs) > 0 {
 		os.Exit(1)
 	}
+	// remove the existing version if there is one
+	modpath := pkg.Module.Path
+	if prefix, _, ok := module.SplitPathVersion(modpath); ok {
+		modpath = prefix
+	}
 	// find the module path for the specified version
-	modpath := WithPathMajor(pkg.Module.Path, semver.Major(version))
+	modpath = JoinPathMajor(modpath, semver.Major(version))
 	return path.Join(modpath, strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)), nil
 }
 
@@ -73,11 +78,7 @@ func SplitSpec(spec string) (path, version string) {
 	return
 }
 
-func WithPathMajor(path, major string) string {
-	// remove the existing version if there is one
-	if prefix, _, ok := module.SplitPathVersion(path); ok {
-		path = prefix
-	}
+func JoinPathMajor(path, major string) string {
 	if strings.HasPrefix(path, "gopkg.in/") {
 		if major == "" {
 			major = "v1"
