@@ -18,6 +18,20 @@ func TestLoad(t *testing.T) {
 				ModPrefix: "gotest.tools",
 			},
 		},
+		{
+			path: "gotest.tools/v3",
+			pkg: &Package{
+				PkgDir:    "",
+				ModPrefix: "gotest.tools",
+			},
+		},
+		{
+			path: "gotest.tools/v3/assert/opt",
+			pkg: &Package{
+				PkgDir:    "assert/opt",
+				ModPrefix: "gotest.tools",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
