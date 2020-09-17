@@ -30,6 +30,7 @@ func main() {
 	}
 	// go get
 	cmd := exec.Command("go", "get", fmt.Sprintf("%s@%s", pkg.Path(version), version))
+	fmt.Println(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -46,10 +47,12 @@ func main() {
 		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
 			return "", false
 		}
-		return packages.Package{
+		newpath := packages.Package{
 			PkgDir:    pkgdir,
 			ModPrefix: pkg.ModPrefix,
-		}.Path(version), true
+		}.Path(version)
+		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
+		return newpath, true
 	})
 	if err != nil {
 		log.Fatal(err)
