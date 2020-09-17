@@ -24,7 +24,7 @@ func main() {
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedModule,
 	}
-	pkgs, err := packages.Load(cfg, pkgpath)
+	pkgs, err := packages.Load(cfg, "-mod=readonly", pkgpath)
 	if err != nil {
 		log.Fatal(err)
 	}
