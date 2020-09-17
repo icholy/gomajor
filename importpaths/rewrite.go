@@ -1,7 +1,6 @@
 package importpaths
 
 import (
-	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -97,9 +96,6 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 	if !change {
 		return nil
 	}
-
-	// since the imports changed, resort them.
-	ast.SortImports(fset, f)
 
 	// create a temporary file, this easily avoids conflicts.
 	temp := name + ".temp"
