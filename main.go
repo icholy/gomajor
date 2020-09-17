@@ -23,11 +23,13 @@ func main() {
 	pkgpath, version := SplitSpec(spec)
 	// find the module root
 	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedModule,
+		Mode:       packages.NeedName | packages.NeedModule,
+		Logf:       log.Printf,
+		BuildFlags: []string{"-mod=readonly"},
 	}
-	pkgs, err := packages.Load(cfg, "-mod=readonly", pkgpath)
+	pkgs, err := packages.Load(cfg, pkgpath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to load package:", err)
 	}
 	if packages.PrintErrors(pkgs) > 0 {
 		os.Exit(1)
