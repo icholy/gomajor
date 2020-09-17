@@ -66,15 +66,16 @@ func (pkg Package) FindModPath(pkgpath string) (string, bool) {
 	if !strings.HasPrefix(pkgpath, pkg.ModPrefix) {
 		return "", false
 	}
-	prefixlen := len(pkg.ModPrefix)
-	if s := pkgpath[prefixlen:]; s != "" && s[0] == '/' {
-		prefixlen++
+	modpathlen := len(pkg.ModPrefix)
+	if s := pkgpath[modpathlen:]; s != "" && s[0] == '/' {
+		modpathlen++
 	}
-	idx := strings.Index(pkgpath[prefixlen:], "/")
-	if idx < 0 {
-		return pkg.ModPrefix, true
+	if idx := strings.Index(pkgpath[modpathlen:], "/"); idx >= 0 {
+		modpathlen += idx
+	} else {
+		modpathlen = len(pkgpath)
 	}
-	if prefix, major, ok := module.SplitPathVersion(pkgpath[:prefixlen+idx]); ok && major != "" {
+	if prefix, major, ok := module.SplitPathVersion(pkgpath[:modpathlen]); ok && major != "" {
 		return JoinPathMajor(prefix, major), true
 	}
 	return pkg.ModPrefix, true
