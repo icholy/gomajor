@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/andybalholm/cascadia"
-	"github.com/hashicorp/go-version"
+	"golang.org/x/mod/semver"
 	"golang.org/x/net/html"
 )
 
@@ -68,14 +68,14 @@ func highest(versions []string) (string, error) {
 		return "", errors.New("no versions")
 	}
 	var newest string
-	var newestVer *version.Version
 	for _, s := range versions {
-		v, err := version.NewVersion(s)
-		if err != nil {
-			return "", err
+		if !semver.IsValid(s) {
+			continue
 		}
-		if newestVer == nil || v.GreaterThan(newestVer) {
-			newestVer = v
+		if newest == "" {
+			newest = s
+		}
+		if semver.Compare(s, newest) > 0 {
 			newest = s
 		}
 	}
