@@ -38,8 +38,9 @@ func main() {
 		log.Fatalf("invalid version: %s", version)
 	}
 	// go get
-	cmd := exec.Command("go", "get", fmt.Sprintf("%s@%s", pkg.Path(version), version))
-	fmt.Println(cmd)
+	spec := fmt.Sprintf("%s@%s", pkg.Path(version), version)
+	fmt.Println("go get", spec)
+	cmd := exec.Command("go", "get", spec)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
