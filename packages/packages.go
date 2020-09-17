@@ -56,15 +56,15 @@ func Load(pkgpath string) (*Package, error) {
 	}, nil
 }
 
-func (pkg *Package) ModPath(version string) string {
+func (pkg Package) ModPath(version string) string {
 	return JoinPathMajor(pkg.ModPrefix, semver.Major(version))
 }
 
-func (pkg *Package) Path(version string) string {
+func (pkg Package) Path(version string) string {
 	return path.Join(pkg.ModPath(version), pkg.PkgDir)
 }
 
-func (pkg *Package) FindModPath(pkgpath string) (string, bool) {
+func (pkg Package) FindModPath(pkgpath string) (string, bool) {
 	if !strings.HasPrefix(pkgpath, pkg.ModPrefix) {
 		return "", false
 	}

@@ -21,10 +21,19 @@ func main() {
 	}
 	log.Println(pkg.Path(version))
 	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
-		if !strings.HasPrefix(path, pkg.ModPrefix) {
+		modpath, ok := pkg.FindModPath(path)
+		if !ok {
 			return "", false
 		}
-		return "", false
+		pkgdir := strings.TrimPrefix(path, modpath)
+		pkgdir = strings.TrimPrefix(pkgdir, "/")
+		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
+			return "", false
+		}
+		return packages.Package{
+			PkgDir:    pkgdir,
+			ModPrefix: pkg.ModPrefix,
+		}.Path(version), true
 	})
 	if err != nil {
 		log.Fatal(err)
