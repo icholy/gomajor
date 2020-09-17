@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"log"
+	"strings"
 
-	"github.com/sanity-io/litter"
-
+	"github.com/icholy/gomajor/importpaths"
 	"github.com/icholy/gomajor/packages"
 )
 
@@ -19,5 +19,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	litter.Dump(pkg)
+	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
+		if !strings.HasPrefix(path, pkg.ModPathV1) {
+			return "", false
+		}
+		return "", false
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
