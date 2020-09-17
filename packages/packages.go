@@ -64,6 +64,21 @@ func (pkg *Package) Path(version string) string {
 	return path.Join(pkg.ModPath(version), pkg.PkgDir)
 }
 
+func (pkg *Package) FindModPath(pkgpath string) (string, bool) {
+	if !strings.HasPrefix(pkgpath, pkg.ModPrefix) {
+		return "", false
+	}
+	prefixlen := len(pkg.ModPrefix)
+	idx := strings.Index(pkgpath[prefixlen:], "/")
+	if idx < 0 {
+		return pkg.ModPrefix, true
+	}
+	if prefix, major, ok := module.SplitPathVersion(pkgpath[:prefixlen+idx]); ok {
+		return JoinPathMajor(prefix, major), true
+	}
+	return pkg.ModPrefix, true
+}
+
 func SplitSpec(spec string) (path, version string) {
 	parts := strings.SplitN(spec, "@", 2)
 	if len(parts) == 2 {
