@@ -52,6 +52,7 @@ func TestPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
+			t.Parallel()
 			pkg, err := Load(tt.path)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, pkg, tt.pkg)
