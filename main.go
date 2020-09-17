@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"path"
 	"strings"
 
@@ -27,6 +28,9 @@ func main() {
 	pkgs, err := packages.Load(cfg, "-mod=readonly", pkgpath)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if packages.PrintErrors(pkgs) > 0 {
+		os.Exit(1)
 	}
 	if len(pkgs) == 0 || pkgs[0].Module == nil {
 		log.Fatalf("failed to find module: %s", pkgpath)
