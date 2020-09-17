@@ -38,6 +38,9 @@ func main() {
 	}
 	// rewrite imports
 	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
+		if strings.Contains(path, "vendor/") {
+			return "", false
+		}
 		modpath, ok := pkg.FindModPath(path)
 		if !ok {
 			return "", false
