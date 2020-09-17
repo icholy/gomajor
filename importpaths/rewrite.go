@@ -107,6 +107,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 	if err != nil {
 		return err
 	}
+	defer w.Close()
 
 	// write changes to .temp file, and include proper formatting.
 	err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(w, fset, f)
