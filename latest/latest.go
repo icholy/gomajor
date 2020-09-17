@@ -3,7 +3,6 @@ package latest
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/andybalholm/cascadia"
@@ -13,17 +12,42 @@ import (
 
 // Version returns the latest version of the modpath
 func Version(modpath string) (string, error) {
-	vv, err := versions(modpath)
+	vv, err := Versions(modpath)
 	if err != nil {
 		return "", err
 	}
-	return highest(vv)
+	var newest string
+	for _, s := range vv {
+		if !semver.IsValid(s) {
+			continue
+		}
+		if newest == "" {
+			newest = s
+		}
+		if semver.Compare(s, newest) > 0 {
+			newest = s
+		}
+	}
+	if newest == "" {
+		return "", errors.New("no valid versions")
+	}
+	return newest, nil
 }
 
-// parse all the versions from the pkg.go.dev versions tab
-func parse(r io.Reader) ([]string, error) {
+// get all the versions for a module
+func Versions(modpath string) ([]string, error) {
+	url := fmt.Sprintf("https://pkg.go.dev/%s?tab=versions", modpath)
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", res.Status)
+	}
+	// extract versions from the html
 	var versions []string
-	doc, err := html.Parse(r)
+	doc, err := html.Parse(res.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -46,38 +70,4 @@ func walk(n *html.Node, f func(*html.Node)) {
 			walk(c, f)
 		}
 	}
-}
-
-// get all the versions for a module
-func versions(modpath string) ([]string, error) {
-	url := fmt.Sprintf("https://pkg.go.dev/%s?tab=versions", modpath)
-	res, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad status: %s", res.Status)
-	}
-	return parse(res.Body)
-}
-
-// highest returns the highest semver version string
-func highest(versions []string) (string, error) {
-	if len(versions) == 0 {
-		return "", errors.New("no versions")
-	}
-	var newest string
-	for _, s := range versions {
-		if !semver.IsValid(s) {
-			continue
-		}
-		if newest == "" {
-			newest = s
-		}
-		if semver.Compare(s, newest) > 0 {
-			newest = s
-		}
-	}
-	return newest, nil
 }
