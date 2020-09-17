@@ -12,6 +12,7 @@ import (
 	"golang.org/x/mod/semver"
 
 	"github.com/icholy/gomajor/importpaths"
+	"github.com/icholy/gomajor/latest"
 	"github.com/icholy/gomajor/packages"
 )
 
@@ -22,12 +23,19 @@ func main() {
 	}
 	// figure out the correct import path
 	pkgpath, version := packages.SplitSpec(flag.Arg(0))
-	if !semver.IsValid(version) {
-		log.Fatalf("invalid version: %s", version)
-	}
 	pkg, err := packages.Load(pkgpath)
 	if err != nil {
 		log.Fatal(err)
+	}
+	// figure out what version to get
+	if version == "latest" {
+		version, err = latest.Version(pkg.ModPrefix)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	if !semver.IsValid(version) {
+		log.Fatalf("invalid version: %s", version)
 	}
 	// go get
 	cmd := exec.Command("go", "get", fmt.Sprintf("%s@%s", pkg.Path(version), version))
