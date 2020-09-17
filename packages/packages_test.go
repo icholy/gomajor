@@ -75,6 +75,14 @@ func TestPackage_FindModPath(t *testing.T) {
 			ok:      true,
 			modpath: "github.com/go-redis/redis",
 		},
+		{
+			pkg: &Package{
+				ModPrefix: "github.com/go-redis/redis",
+			},
+			path:    "github.com/go-redis/redis/v8",
+			ok:      true,
+			modpath: "github.com/go-redis/redis/v8",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
