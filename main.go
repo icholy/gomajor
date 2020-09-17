@@ -17,6 +17,9 @@ import (
 )
 
 func main() {
+	var rewrite, goget bool
+	flag.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
+	flag.BoolVar(&goget, "get", true, "run go get")
 	flag.Parse()
 	if flag.NArg() != 1 {
 		log.Fatal("missing package spec")
@@ -38,15 +41,20 @@ func main() {
 		log.Fatalf("invalid version: %s", version)
 	}
 	// go get
-	spec := fmt.Sprintf("%s@%s", pkg.Path(version), version)
-	fmt.Println("go get", spec)
-	cmd := exec.Command("go", "get", spec)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
+	if goget {
+		spec := fmt.Sprintf("%s@%s", pkg.Path(version), version)
+		fmt.Println("go get", spec)
+		cmd := exec.Command("go", "get", spec)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			log.Fatal(err)
+		}
 	}
 	// rewrite imports
+	if !rewrite {
+		return
+	}
 	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
 		if strings.Contains(name, "vendor"+string(filepath.Separator)) {
 			return "", false
