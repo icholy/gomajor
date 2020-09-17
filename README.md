@@ -13,8 +13,9 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 
 ### Features:
 
+* Finds latest version.
+* Rewrites your import paths.
 * Let's you ignore SIV on the command line.
-* Automatically rewrites your import paths.
 
 ### Warning:
 
