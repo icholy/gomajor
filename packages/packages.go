@@ -14,12 +14,11 @@ import (
 )
 
 type Package struct {
-	Version   string
 	PkgDir    string
 	ModPrefix string
 }
 
-func PackageWithVersion(pkgpath string, version string) (*Package, error) {
+func Load(pkgpath string) (*Package, error) {
 	// create temp module directory
 	dir, err := TempModDir()
 	if err != nil {
@@ -50,21 +49,19 @@ func PackageWithVersion(pkgpath string, version string) (*Package, error) {
 	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
 		modprefix = prefix
 	}
-	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
-	pkgdir = strings.TrimPrefix(pkgdir, "/")
+	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path+"/")
 	return &Package{
-		Version:   version,
 		PkgDir:    pkgdir,
 		ModPrefix: modprefix,
 	}, nil
 }
 
-func (pkg *Package) ModPath() string {
-	return JoinPathMajor(pkg.ModPrefix, semver.Major(pkg.Version))
+func (pkg *Package) ModPath(version string) string {
+	return JoinPathMajor(pkg.ModPrefix, semver.Major(version))
 }
 
-func (pkg *Package) Path() string {
-	return path.Join(pkg.ModPath(), pkg.PkgDir)
+func (pkg *Package) Path(version string) string {
+	return path.Join(pkg.ModPath(version), pkg.PkgDir)
 }
 
 func SplitSpec(spec string) (path, version string) {

@@ -15,12 +15,13 @@ func main() {
 		log.Fatal("missing package spec")
 	}
 	pkgpath, version := packages.SplitSpec(flag.Arg(0))
-	pkg, err := packages.PackageWithVersion(pkgpath, version)
+	pkg, err := packages.Load(pkgpath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println(pkg.Path(version))
 	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
-		if !strings.HasPrefix(path, pkg.ModPathV1) {
+		if !strings.HasPrefix(path, pkg.ModPrefix) {
 			return "", false
 		}
 		return "", false
