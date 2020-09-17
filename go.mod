@@ -9,4 +9,5 @@ require (
 	golang.org/x/mod v0.3.0
 	golang.org/x/tools v0.0.0-20200916195026-c9a70fc28ce3
 	gotest.tools v2.2.0+incompatible // indirect
+	gotest.tools/v3 v3.0.2
 )

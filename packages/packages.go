@@ -49,7 +49,8 @@ func Load(pkgpath string) (*Package, error) {
 	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
 		modprefix = prefix
 	}
-	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path+"/")
+	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
+	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	return &Package{
 		PkgDir:    pkgdir,
 		ModPrefix: modprefix,
