@@ -64,6 +64,9 @@ func main() {
 			PkgDir:    pkgdir,
 			ModPrefix: pkg.ModPrefix,
 		}.Path(version)
+		if newpath == path {
+			return "", false
+		}
 		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
 		return newpath, true
 	})
