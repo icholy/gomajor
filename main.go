@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
@@ -21,11 +23,17 @@ func main() {
 	// split the package package and version
 	spec := flag.Arg(0)
 	pkgpath, version := SplitSpec(spec)
+	// create a temporary module
+	dir, err := TempModDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
 	// find the module root
 	cfg := &packages.Config{
 		Mode:       packages.NeedName | packages.NeedModule,
-		Logf:       log.Printf,
 		BuildFlags: []string{"-mod=readonly"},
+		Dir:        dir,
 	}
 	pkgs, err := packages.Load(cfg, pkgpath)
 	if err != nil {
@@ -74,4 +82,18 @@ func WithPathMajor(path, major string) string {
 		path += "/"
 	}
 	return path + major
+}
+
+func TempModDir() (string, error) {
+	dir, err := ioutil.TempDir("", "gomajor_*")
+	if err != nil {
+		return "", err
+	}
+	cmd := exec.Command("go", "mod", "init", "temp")
+	cmd.Dir = dir
+	if err := cmd.Run(); err != nil {
+		_ = os.RemoveAll(dir) // best effort
+		return "", err
+	}
+	return dir, nil
 }
