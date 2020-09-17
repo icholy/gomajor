@@ -26,8 +26,7 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 		// skip directories
 		if info.IsDir() {
 			// don't recurse into vendor or .git directories
-			_, last := filepath.Split(name)
-			if last == "vendor" || last == ".git" {
+			if info.Name() == "vendor" || info.Name() == ".git" {
 				return filepath.SkipDir
 			}
 			return nil
