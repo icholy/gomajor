@@ -91,7 +91,7 @@ func TestPackage_FindModPath(t *testing.T) {
 				t.Fatal("failed to find modpath")
 			}
 			if modpath != tt.modpath {
-				t.Errorf("bad modpath: got %q, want %q", modpath, tt.modpath)
+				t.Errorf("wrong modpath: got %q, want %q", modpath, tt.modpath)
 			}
 		})
 	}
