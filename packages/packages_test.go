@@ -55,6 +55,7 @@ func TestPackage(t *testing.T) {
 			pkg, err := Load(tt.path)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, pkg, tt.pkg)
+			assert.Equal(t, tt.pkg.Path(tt.version), tt.pkgpath)
 		})
 	}
 }
