@@ -21,5 +21,5 @@ Warning:
 * This tool has no dry-run or undo feature. Commit before running.
 * If you have multiple major versions imported, ALL of them will be rewritten.
 * `@master` is not supported.
-* `@latest` scrapes pkg.go.dev
+* `@latest` scrapes pkg.go.dev and will stop working at some point.
 * gopkg.in imports are not supported.
