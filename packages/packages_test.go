@@ -6,10 +6,12 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestLoad(t *testing.T) {
+func TestPackage(t *testing.T) {
 	tests := []struct {
-		path string
-		pkg  *Package
+		path    string
+		pkg     *Package
+		version string
+		pkgpath string
 	}{
 		{
 			path: "gotest.tools",
@@ -17,6 +19,8 @@ func TestLoad(t *testing.T) {
 				PkgDir:    "",
 				ModPrefix: "gotest.tools",
 			},
+			version: "v3.0.0",
+			pkgpath: "gotest.tools/v3",
 		},
 		{
 			path: "gotest.tools/v3",
@@ -24,6 +28,8 @@ func TestLoad(t *testing.T) {
 				PkgDir:    "",
 				ModPrefix: "gotest.tools",
 			},
+			version: "v2.0.1",
+			pkgpath: "gotest.tools/v2",
 		},
 		{
 			path: "gotest.tools/v3/assert/opt",
@@ -31,6 +37,8 @@ func TestLoad(t *testing.T) {
 				PkgDir:    "assert/opt",
 				ModPrefix: "gotest.tools",
 			},
+			version: "v1.0.0",
+			pkgpath: "gotest.tools/assert/opt",
 		},
 		{
 			path: "github.com/go-redis/redis/internal/proto",
@@ -38,6 +46,8 @@ func TestLoad(t *testing.T) {
 				PkgDir:    "internal/proto",
 				ModPrefix: "github.com/go-redis/redis",
 			},
+			version: "v8.0.0",
+			pkgpath: "github.com/go-redis/redis/v8/internal/proto",
 		},
 	}
 	for _, tt := range tests {
