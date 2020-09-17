@@ -19,6 +19,9 @@ type Package struct {
 }
 
 func Load(pkgpath string) (*Package, error) {
+	if strings.HasPrefix(pkgpath, "gopkg.in") {
+		return nil, fmt.Errorf("gopkg.in is not supported")
+	}
 	// create temp module directory
 	dir, err := TempModDir()
 	if err != nil {
@@ -94,12 +97,6 @@ func SplitSpec(spec string) (path, version string) {
 
 func JoinPathMajor(path, major string) string {
 	major = strings.TrimPrefix(major, "/")
-	if strings.HasPrefix(path, "gopkg.in/") {
-		if major == "" {
-			major = "v1"
-		}
-		return path + "." + major
-	}
 	if major == "v0" || major == "v1" || major == "" {
 		return path
 	}
