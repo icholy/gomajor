@@ -23,11 +23,19 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 			log.Println("import rewrite:", err)
 			return nil
 		}
-		// check the file is a .go file.
-		if info.IsDir() || !strings.HasSuffix(name, ".go") {
+		// skip directories
+		if info.IsDir() {
+			// don't recurse into vendor directories
+			if _, last := filepath.Split(name); last == "vendor" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
-		return RewriteFile(name, replace)
+		// check the file is a .go file.
+		if strings.HasSuffix(name, ".go") {
+			return RewriteFile(name, replace)
+		}
+		return nil
 	})
 }
 

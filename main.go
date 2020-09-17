@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -59,9 +58,6 @@ func main() {
 		return
 	}
 	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
-		if strings.Contains(name, "vendor"+string(filepath.Separator)) {
-			return "", false
-		}
 		modpath, ok := pkg.FindModPath(path)
 		if !ok {
 			return "", false
