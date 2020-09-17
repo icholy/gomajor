@@ -15,10 +15,8 @@ import (
 
 type Package struct {
 	Version   string
-	PkgPath   string
 	PkgDir    string
-	ModPath   string
-	ModPathV1 string
+	ModPrefix string
 }
 
 func PackageWithVersion(pkgpath string, version string) (*Package, error) {
@@ -48,21 +46,25 @@ func PackageWithVersion(pkgpath string, version string) (*Package, error) {
 		os.Exit(1)
 	}
 	// remove the existing version if there is one
-	modpathV1 := pkg.Module.Path
-	if prefix, _, ok := module.SplitPathVersion(modpathV1); ok {
-		modpathV1 = prefix
+	modprefix := pkg.Module.Path
+	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
+		modprefix = prefix
 	}
 	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
 	pkgdir = strings.TrimPrefix(pkgdir, "/")
-	// find the module path for the specified version
-	modpath := JoinPathMajor(modpathV1, semver.Major(version))
 	return &Package{
 		Version:   version,
-		PkgPath:   path.Join(modpath, pkgdir),
 		PkgDir:    pkgdir,
-		ModPath:   modpath,
-		ModPathV1: modpathV1,
+		ModPrefix: modprefix,
 	}, nil
+}
+
+func (pkg *Package) ModPath() string {
+	return JoinPathMajor(pkg.ModPrefix, semver.Major(pkg.Version))
+}
+
+func (pkg *Package) Path() string {
+	return path.Join(pkg.ModPath(), pkg.PkgDir)
 }
 
 func SplitSpec(spec string) (path, version string) {
