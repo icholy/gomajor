@@ -2,7 +2,7 @@
 
 > This is an experimental tool for upgrading major versions
 
-Example:
+### Example:
 
 ```
 $ gomajor github.com/go-redis/redis@latest
@@ -11,12 +11,12 @@ foo.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 ```
 
-Features:
+### Features:
 
 * Let's you ignore SIV on the command line.
 * Automatically rewrites your import paths.
 
-Warning:
+### Warning:
 
 * This tool has no dry-run or undo feature. Commit before running.
 * If you have multiple major versions imported, ALL of them will be rewritten.
