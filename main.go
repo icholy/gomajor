@@ -37,12 +37,15 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	if !semver.IsValid(version) {
+	if version != "" && !semver.IsValid(version) {
 		log.Fatalf("invalid version: %s", version)
 	}
 	// go get
 	if goget {
-		spec := fmt.Sprintf("%s@%s", pkg.Path(version), semver.Canonical(version))
+		spec := pkg.Path(version)
+		if version != "" {
+			spec += "@" + semver.Canonical(version)
+		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
 		cmd.Stdout = os.Stdout
