@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/mod/module"
@@ -89,9 +89,10 @@ func TempModDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cmd := exec.Command("go", "mod", "init", "temp")
-	cmd.Dir = dir
-	if err := cmd.Run(); err != nil {
+	modfile := "module temp"
+	modpath := filepath.Join(dir, "go.mod")
+	err = ioutil.WriteFile(modpath, []byte(modfile), os.ModePerm)
+	if err != nil {
 		_ = os.RemoveAll(dir) // best effort
 		return "", err
 	}
