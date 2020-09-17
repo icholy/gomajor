@@ -21,6 +21,6 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 
 * This tool has no dry-run or undo feature. Commit before running.
 * If you have multiple major versions imported, ALL of them will be rewritten.
-* `@master` is not supported.
 * `@latest` scrapes pkg.go.dev and will stop working at some point.
+* `@master` is not supported.
 * gopkg.in imports are not supported.
