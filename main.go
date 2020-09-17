@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sanity-io/litter"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 	"golang.org/x/tools/go/packages"
@@ -24,18 +25,26 @@ func main() {
 	spec := flag.Arg(0)
 	pkgpath, version := SplitSpec(spec)
 	// create a temporary module
-	path, err := PackageWithVersion(pkgpath, version)
+	pkg, err := PackageWithVersion(pkgpath, version)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(path)
+	litter.Dump(pkg)
 }
 
-func PackageWithVersion(pkgpath string, version string) (string, error) {
+type Package struct {
+	Version   string
+	PkgPath   string
+	PkgDir    string
+	ModPath   string
+	ModPathV1 string
+}
+
+func PackageWithVersion(pkgpath string, version string) (*Package, error) {
 	// create temp module directory
 	dir, err := TempModDir()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer os.RemoveAll(dir)
 	// find the module root
@@ -45,26 +54,34 @@ func PackageWithVersion(pkgpath string, version string) (string, error) {
 	}
 	pkgs, err := packages.Load(cfg, pkgpath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if len(pkgs) == 0 {
-		return "", fmt.Errorf("failed to file module: %s", pkgpath)
+		return nil, fmt.Errorf("failed to file module: %s", pkgpath)
 	}
 	pkg := pkgs[0]
 	if len(pkg.Errors) > 0 {
-		return "", pkg.Errors[0]
+		return nil, pkg.Errors[0]
 	}
 	if packages.PrintErrors(pkgs) > 0 {
 		os.Exit(1)
 	}
 	// remove the existing version if there is one
-	modpath := pkg.Module.Path
-	if prefix, _, ok := module.SplitPathVersion(modpath); ok {
-		modpath = prefix
+	modpathV1 := pkg.Module.Path
+	if prefix, _, ok := module.SplitPathVersion(modpathV1); ok {
+		modpathV1 = prefix
 	}
+	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
+	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	// find the module path for the specified version
-	modpath = JoinPathMajor(modpath, semver.Major(version))
-	return path.Join(modpath, strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)), nil
+	modpath := JoinPathMajor(modpathV1, semver.Major(version))
+	return &Package{
+		Version:   version,
+		PkgPath:   path.Join(modpath, pkgdir),
+		PkgDir:    pkgdir,
+		ModPath:   modpath,
+		ModPathV1: modpathV1,
+	}, nil
 }
 
 func SplitSpec(spec string) (path, version string) {
