@@ -13,5 +13,8 @@ Example:
 gomajor github.com/go-redis/redis@v8.0.0
 ```
 
-**Note:** this will work even though the major version isn't specified in the package path.
+Warning:
 
+* This tool has no dry-run or undo feature. Commit before running.
+* If you have multiple major versions imported, ALL of them will be rewritten.
+* `@lastest` and `@master` are not supported.
