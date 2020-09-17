@@ -67,7 +67,7 @@ func (pkg Package) FindModPath(pkgpath string) (string, bool) {
 		return "", false
 	}
 	modpathlen := len(pkg.ModPrefix)
-	if s := pkgpath[modpathlen:]; s != "" && s[0] == '/' {
+	if strings.HasPrefix(pkgpath[modpathlen:], "/") {
 		modpathlen++
 	}
 	if idx := strings.Index(pkgpath[modpathlen:], "/"); idx >= 0 {
