@@ -15,7 +15,7 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 
 * Finds latest version.
 * Rewrites your import paths.
-* Let's you ignore SIV on the command line.
+* Lets you ignore SIV on the command line.
 
 ### Warning:
 
