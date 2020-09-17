@@ -1,10 +1,6 @@
 package packages
 
-import (
-	"testing"
-
-	"gotest.tools/v3/assert"
-)
+import "testing"
 
 func TestPackage(t *testing.T) {
 	tests := []struct {
@@ -54,9 +50,15 @@ func TestPackage(t *testing.T) {
 		t.Run(tt.path, func(t *testing.T) {
 			t.Parallel()
 			pkg, err := Load(tt.path)
-			assert.NilError(t, err)
-			assert.DeepEqual(t, pkg, tt.pkg)
-			assert.Equal(t, tt.pkg.Path(tt.version), tt.pkgpath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if pkg.ModPrefix != tt.pkg.ModPrefix {
+				t.Errorf("wrong ModPrefix: got %q, want %q", pkg.ModPrefix, tt.pkg.ModPrefix)
+			}
+			if pkgpath := tt.pkg.Path(tt.version); pkgpath != tt.pkgpath {
+				t.Errorf("wrong package path: got %q, want %q", pkgpath, tt.pkgpath)
+			}
 		})
 	}
 }
@@ -65,7 +67,6 @@ func TestPackage_FindModPath(t *testing.T) {
 	tests := []struct {
 		pkg     *Package
 		path    string
-		ok      bool
 		modpath string
 	}{
 		{
@@ -73,7 +74,6 @@ func TestPackage_FindModPath(t *testing.T) {
 				ModPrefix: "github.com/go-redis/redis",
 			},
 			path:    "github.com/go-redis/redis/internal/proto",
-			ok:      true,
 			modpath: "github.com/go-redis/redis",
 		},
 		{
@@ -81,15 +81,18 @@ func TestPackage_FindModPath(t *testing.T) {
 				ModPrefix: "github.com/go-redis/redis",
 			},
 			path:    "github.com/go-redis/redis/v8",
-			ok:      true,
 			modpath: "github.com/go-redis/redis/v8",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			modpath, ok := tt.pkg.FindModPath(tt.path)
-			assert.Equal(t, ok, tt.ok)
-			assert.Equal(t, modpath, tt.modpath)
+			if !ok {
+				t.Fatal("failed to find modpath")
+			}
+			if modpath != tt.modpath {
+				t.Errorf("bad modpath: got %q, want %q", modpath, tt.modpath)
+			}
 		})
 	}
 }
