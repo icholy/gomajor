@@ -5,7 +5,10 @@
 Example:
 
 ```
-gomajor github.com/go-redis/redis@latest
+$ gomajor github.com/go-redis/redis@latest
+go get github.com/go-redis/redis/v8@v8.1.1
+foo.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
+bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 ```
 
 Features:
