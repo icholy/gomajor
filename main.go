@@ -31,9 +31,8 @@ func main() {
 	defer os.RemoveAll(dir)
 	// find the module root
 	cfg := &packages.Config{
-		Mode:       packages.NeedName | packages.NeedModule,
-		BuildFlags: []string{"-mod=readonly"},
-		Dir:        dir,
+		Dir:  dir,
+		Mode: packages.NeedName | packages.NeedModule,
 	}
 	pkgs, err := packages.Load(cfg, pkgpath)
 	if err != nil {
