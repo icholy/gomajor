@@ -59,3 +59,28 @@ func TestPackage(t *testing.T) {
 		})
 	}
 }
+
+func TestPackage_FindModPath(t *testing.T) {
+	tests := []struct {
+		pkg     *Package
+		path    string
+		ok      bool
+		modpath string
+	}{
+		{
+			pkg: &Package{
+				ModPrefix: "github.com/go-redis/redis",
+			},
+			path:    "github.com/go-redis/redis/internal/proto",
+			ok:      true,
+			modpath: "github.com/go-redis/redis",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			modpath, ok := tt.pkg.FindModPath(tt.path)
+			assert.Equal(t, ok, tt.ok)
+			assert.Equal(t, modpath, tt.modpath)
+		})
+	}
+}
