@@ -69,6 +69,9 @@ func (pkg *Package) FindModPath(pkgpath string) (string, bool) {
 		return "", false
 	}
 	prefixlen := len(pkg.ModPrefix)
+	if s := pkgpath[prefixlen:]; s != "" && s[0] == '/' {
+		prefixlen++
+	}
 	idx := strings.Index(pkgpath[prefixlen:], "/")
 	if idx < 0 {
 		return pkg.ModPrefix, true
@@ -91,6 +94,7 @@ func SplitSpec(spec string) (path, version string) {
 }
 
 func JoinPathMajor(path, major string) string {
+	major = strings.TrimPrefix(major, "/")
 	if strings.HasPrefix(path, "gopkg.in/") {
 		if major == "" {
 			major = "v1"
