@@ -74,7 +74,7 @@ func (pkg Package) FindModPath(pkgpath string) (string, bool) {
 	if idx < 0 {
 		return pkg.ModPrefix, true
 	}
-	if prefix, major, ok := module.SplitPathVersion(pkgpath[:prefixlen+idx]); ok {
+	if prefix, major, ok := module.SplitPathVersion(pkgpath[:prefixlen+idx]); ok && major != "" {
 		return JoinPathMajor(prefix, major), true
 	}
 	return pkg.ModPrefix, true
