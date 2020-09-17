@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/andybalholm/cascadia v1.2.0
 	github.com/google/go-cmp v0.5.2 // indirect
-	github.com/hashicorp/go-version v1.2.1
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/mod v0.3.0
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
