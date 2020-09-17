@@ -2,16 +2,16 @@
 
 > This is an experimental tool for upgrading major versions
 
-Features:
-
-* Let's you ignore SIV on the command line.
-* Automatically rewrites your import paths.
-
 Example:
 
 ```
 gomajor github.com/go-redis/redis@latest
 ```
+
+Features:
+
+* Let's you ignore SIV on the command line.
+* Automatically rewrites your import paths.
 
 Warning:
 
