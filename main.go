@@ -11,9 +11,9 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	"github.com/icholy/gomajor/importpaths"
-	"github.com/icholy/gomajor/latest"
-	"github.com/icholy/gomajor/packages"
+	"github.com/icholy/gomajor/internal/importpaths"
+	"github.com/icholy/gomajor/internal/latest"
+	"github.com/icholy/gomajor/internal/packages"
 )
 
 func main() {
