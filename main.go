@@ -24,9 +24,18 @@ func main() {
 	spec := flag.Arg(0)
 	pkgpath, version := SplitSpec(spec)
 	// create a temporary module
-	dir, err := TempModDir()
+	path, err := PackageWithVersion(pkgpath, version)
 	if err != nil {
 		log.Fatal(err)
+	}
+	fmt.Println(path)
+}
+
+func PackageWithVersion(pkgpath string, version string) (string, error) {
+	// create temp module directory
+	dir, err := TempModDir()
+	if err != nil {
+		return "", err
 	}
 	defer os.RemoveAll(dir)
 	// find the module root
@@ -36,20 +45,21 @@ func main() {
 	}
 	pkgs, err := packages.Load(cfg, pkgpath)
 	if err != nil {
-		log.Fatal("failed to load package:", err)
+		return "", err
+	}
+	if len(pkgs) == 0 {
+		return "", fmt.Errorf("failed to file module: %s", pkgpath)
+	}
+	pkg := pkgs[0]
+	if len(pkg.Errors) > 0 {
+		return "", pkg.Errors[0]
 	}
 	if packages.PrintErrors(pkgs) > 0 {
 		os.Exit(1)
 	}
-	if len(pkgs) == 0 || pkgs[0].Module == nil {
-		log.Fatalf("failed to find module: %s", pkgpath)
-	}
-	pkg := pkgs[0]
 	// find the module path for the specified version
 	modpath := WithPathMajor(pkg.Module.Path, semver.Major(version))
-	fmt.Println(
-		path.Join(modpath, strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)),
-	)
+	return path.Join(modpath, strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)), nil
 }
 
 func SplitSpec(spec string) (path, version string) {
