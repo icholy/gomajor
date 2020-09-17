@@ -10,7 +10,7 @@ Features:
 Example:
 
 ```
-gomajor github.com/go-redis/redis@v8.0.0
+gomajor github.com/go-redis/redis@latest
 ```
 
 Warning:
