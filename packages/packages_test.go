@@ -32,6 +32,13 @@ func TestLoad(t *testing.T) {
 				ModPrefix: "gotest.tools",
 			},
 		},
+		{
+			path: "github.com/go-redis/redis/internal/proto",
+			pkg: &Package{
+				PkgDir:    "internal/proto",
+				ModPrefix: "github.com/go-redis/redis",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
