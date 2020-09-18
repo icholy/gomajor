@@ -23,14 +23,29 @@ func main() {
 			log.Fatal(err)
 		}
 	case "list":
-		log.Print("list")
+		if err := list(); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		log.Fatal("no command specified")
 	}
 }
 
 func list() error {
-	log.Println("list")
+	direct, err := packages.Direct(".")
+	if err != nil {
+		return err
+	}
+	for _, mod := range direct {
+		v, err := latest.Version(mod.Prefix)
+		if err != nil {
+			log.Printf("%s: %v", mod.Path, err)
+			continue
+		}
+		if semver.Compare(v, mod.Version) > 0 {
+			log.Printf("%s: %v", mod.Path, v)
+		}
+	}
 	return nil
 }
 

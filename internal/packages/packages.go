@@ -13,6 +13,40 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+type Module struct {
+	Version string
+	Path    string
+	Prefix  string
+}
+
+func Direct(dir string) ([]*Module, error) {
+	cfg := packages.Config{
+		Mode: packages.NeedModule,
+		Dir:  dir,
+	}
+	pkgs, err := packages.Load(&cfg, "all")
+	if err != nil {
+		return nil, err
+	}
+	direct := []*Module{}
+	seen := map[string]bool{}
+	for _, pkg := range pkgs {
+		if mod := pkg.Module; mod != nil && !mod.Indirect && !mod.Main && !seen[mod.Path] {
+			seen[mod.Path] = true
+			modprefix := pkg.Module.Path
+			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
+				modprefix = prefix
+			}
+			direct = append(direct, &Module{
+				Version: mod.Version,
+				Path:    mod.Path,
+				Prefix:  modprefix,
+			})
+		}
+	}
+	return direct, nil
+}
+
 type Package struct {
 	PkgDir    string
 	ModPrefix string
