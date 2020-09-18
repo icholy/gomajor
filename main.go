@@ -65,11 +65,11 @@ func list() error {
 		}
 		v, err := latest.Version(pkg.Path("v1.0.0"))
 		if err != nil {
-			fmt.Printf("%s: failed: %v\n", pkg.ModPath(""), err)
+			fmt.Printf("%s: failed: %v\n", pkg.ModPrefix, err)
 			continue
 		}
 		if semver.Compare(v, pkg.Version) > 0 {
-			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(""), pkg.Version, v)
+			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPrefix, pkg.Version, v)
 		}
 	}
 	return nil
