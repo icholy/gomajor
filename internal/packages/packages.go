@@ -89,21 +89,19 @@ func Direct(dir string) ([]*Package, error) {
 	return direct, nil
 }
 
-func (pkg Package) ModPath(version string) string {
-	if version == "" {
-		version = pkg.Version
-	}
-	if strings.Contains(version, "+incompatible") {
-		return pkg.ModPrefix
-	}
-	return JoinPathMajor(pkg.ModPrefix, semver.Major(version))
+func (pkg Package) Incompatible() bool {
+	return strings.Contains(pkg.Version, "+incompatible")
 }
 
-func (pkg Package) Path(version string) string {
-	if version == "" {
-		version = pkg.Version
+func (pkg Package) ModPath() string {
+	if pkg.Incompatible() {
+		return pkg.ModPrefix
 	}
-	return path.Join(pkg.ModPath(version), pkg.PkgDir)
+	return JoinPathMajor(pkg.ModPrefix, semver.Major(pkg.Version))
+}
+
+func (pkg Package) Path() string {
+	return path.Join(pkg.ModPath(), pkg.PkgDir)
 }
 
 func (pkg Package) FindModPath(pkgpath string) (string, bool) {
