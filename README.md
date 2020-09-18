@@ -5,8 +5,13 @@
 ### Example:
 
 ```
-$ gomajor github.com/go-redis/redis@latest
-go get github.com/go-redis/redis/v8@v8.1.1
+$ gomajor list
+github.com/go-redis/redis/v6: v6.15.9+incompatible [latest v8.1.3]
+```
+
+```
+$ gomajor get github.com/go-redis/redis@latest
+go get github.com/go-redis/redis/v8@v8.1.3
 foo.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 ```

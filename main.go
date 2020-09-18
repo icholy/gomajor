@@ -60,16 +60,16 @@ func list() error {
 		}
 		seen[pkg.ModPrefix] = true
 		if strings.HasPrefix(pkg.ModPrefix, "gopkg.in") {
-			log.Printf("%s: not supported", pkg.ModPrefix)
+			fmt.Printf("%s: not supported\n", pkg.ModPrefix)
 			continue
 		}
 		v, err := latest.Version(pkg.Path("v1.0.0"))
 		if err != nil {
-			log.Printf("%s: failed: %v", pkg.ModPath(""), err)
+			fmt.Printf("%s: failed: %v\n", pkg.ModPath(""), err)
 			continue
 		}
 		if semver.Compare(v, pkg.Version) > 0 {
-			log.Printf("%s: %s [latest %v]", pkg.ModPath(""), pkg.Version, v)
+			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(""), pkg.Version, v)
 		}
 	}
 	return nil
