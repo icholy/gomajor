@@ -91,7 +91,7 @@ func get() error {
 	}
 	// figure out what version to get
 	if version == "latest" {
-		version, err = latest.Version(pkg.Path(""))
+		version, err = latest.Version(pkg.ModPrefix)
 		if err != nil {
 			return err
 		}
