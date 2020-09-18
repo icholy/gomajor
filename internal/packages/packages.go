@@ -93,6 +93,9 @@ func (pkg Package) ModPath(version string) string {
 	if version == "" {
 		version = pkg.Version
 	}
+	if strings.Contains(version, "+incompatible") {
+		return pkg.ModPrefix
+	}
 	return JoinPathMajor(pkg.ModPrefix, semver.Major(version))
 }
 
