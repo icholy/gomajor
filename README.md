@@ -6,7 +6,7 @@
 
 ```
 $ gomajor list
-github.com/go-redis/redis/v6: v6.15.9+incompatible [latest v8.1.3]
+github.com/go-redis/redis: v6.15.9+incompatible [latest v8.1.3]
 ```
 
 ```
