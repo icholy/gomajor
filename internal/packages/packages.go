@@ -13,41 +13,8 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-type Module struct {
-	Version string
-	Path    string
-	Prefix  string
-}
-
-func Direct(dir string) ([]*Module, error) {
-	cfg := packages.Config{
-		Mode: packages.NeedModule,
-		Dir:  dir,
-	}
-	pkgs, err := packages.Load(&cfg, "all")
-	if err != nil {
-		return nil, err
-	}
-	direct := []*Module{}
-	seen := map[string]bool{}
-	for _, pkg := range pkgs {
-		if mod := pkg.Module; mod != nil && !mod.Indirect && !mod.Main && !seen[mod.Path] {
-			seen[mod.Path] = true
-			modprefix := pkg.Module.Path
-			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
-				modprefix = prefix
-			}
-			direct = append(direct, &Module{
-				Version: mod.Version,
-				Path:    mod.Path,
-				Prefix:  modprefix,
-			})
-		}
-	}
-	return direct, nil
-}
-
 type Package struct {
+	Version   string
 	PkgDir    string
 	ModPrefix string
 }
@@ -86,16 +53,53 @@ func Load(pkgpath string) (*Package, error) {
 	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
 	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	return &Package{
+		Version:   pkg.Module.Version,
 		PkgDir:    pkgdir,
 		ModPrefix: modprefix,
 	}, nil
 }
 
+func Direct(dir string) ([]*Package, error) {
+	cfg := packages.Config{
+		Mode: packages.NeedName | packages.NeedModule,
+		Dir:  dir,
+	}
+	pkgs, err := packages.Load(&cfg, "all")
+	if err != nil {
+		return nil, err
+	}
+	direct := []*Package{}
+	seen := map[string]bool{}
+	for _, pkg := range pkgs {
+		if mod := pkg.Module; mod != nil && !mod.Indirect && !mod.Main && !seen[pkg.PkgPath] {
+			seen[pkg.PkgPath] = true
+			modprefix := pkg.Module.Path
+			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
+				modprefix = prefix
+			}
+			pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
+			pkgdir = strings.TrimPrefix(pkgdir, "/")
+			direct = append(direct, &Package{
+				Version:   mod.Version,
+				PkgDir:    pkgdir,
+				ModPrefix: modprefix,
+			})
+		}
+	}
+	return direct, nil
+}
+
 func (pkg Package) ModPath(version string) string {
+	if version == "" {
+		version = pkg.Version
+	}
 	return JoinPathMajor(pkg.ModPrefix, semver.Major(version))
 }
 
 func (pkg Package) Path(version string) string {
+	if version == "" {
+		version = pkg.Version
+	}
 	return path.Join(pkg.ModPath(version), pkg.PkgDir)
 }
 

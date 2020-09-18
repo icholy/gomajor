@@ -36,14 +36,19 @@ func list() error {
 	if err != nil {
 		return err
 	}
-	for _, mod := range direct {
-		v, err := latest.Version(mod.Prefix)
-		if err != nil {
-			log.Printf("%s: failed: %v", mod.Path, err)
+	seen := map[string]bool{}
+	for _, pkg := range direct {
+		if seen[pkg.ModPrefix] {
 			continue
 		}
-		if semver.Compare(v, mod.Version) > 0 {
-			log.Printf("%s: %s [latest %v]", mod.Path, mod.Version, v)
+		seen[pkg.ModPrefix] = true
+		v, err := latest.Version(pkg.Path(""))
+		if err != nil {
+			log.Printf("%s: failed: %v", pkg.ModPath(""), err)
+			continue
+		}
+		if semver.Compare(v, pkg.Version) > 0 {
+			log.Printf("%s: %s [latest %v]", pkg.ModPath(""), pkg.Version, v)
 		}
 	}
 	return nil

@@ -43,7 +43,7 @@ func Versions(modpath string) ([]string, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad status: %s", res.Status)
+		return nil, errors.New(res.Status)
 	}
 	// extract versions from the html
 	var versions []string
