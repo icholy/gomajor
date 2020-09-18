@@ -45,6 +45,10 @@ func Load(pkgpath string) (*Package, error) {
 	if len(pkg.Errors) > 0 {
 		return nil, pkg.Errors[0]
 	}
+	version := pkg.Module.Version
+	if replace := pkg.Module.Replace; replace != nil {
+		version = replace.Version
+	}
 	// remove the existing version if there is one
 	modprefix := pkg.Module.Path
 	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
@@ -53,7 +57,7 @@ func Load(pkgpath string) (*Package, error) {
 	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
 	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	return &Package{
-		Version:   pkg.Module.Version,
+		Version:   version,
 		PkgDir:    pkgdir,
 		ModPrefix: modprefix,
 	}, nil
@@ -73,6 +77,10 @@ func Direct(dir string) ([]*Package, error) {
 	for _, pkg := range pkgs {
 		if mod := pkg.Module; mod != nil && !mod.Indirect && !mod.Main && !seen[pkg.PkgPath] {
 			seen[pkg.PkgPath] = true
+			version := mod.Version
+			if mod.Replace != nil {
+				version = mod.Replace.Version
+			}
 			modprefix := pkg.Module.Path
 			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
 				modprefix = prefix
@@ -80,7 +88,7 @@ func Direct(dir string) ([]*Package, error) {
 			pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
 			pkgdir = strings.TrimPrefix(pkgdir, "/")
 			direct = append(direct, &Package{
-				Version:   mod.Version,
+				Version:   version,
 				PkgDir:    pkgdir,
 				ModPrefix: modprefix,
 			})
