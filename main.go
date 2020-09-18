@@ -42,6 +42,9 @@ func list() error {
 			continue
 		}
 		seen[pkg.ModPrefix] = true
+		if strings.HasPrefix(pkg.ModPrefix, "gopkg.in") {
+			log.Printf("%s: not supported", pkg.ModPrefix)
+		}
 		v, err := latest.Version(pkg.Path(""))
 		if err != nil {
 			log.Printf("%s: failed: %v", pkg.ModPath(""), err)
