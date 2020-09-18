@@ -45,6 +45,15 @@ func TestPackage(t *testing.T) {
 			version: "v8.0.0",
 			pkgpath: "github.com/go-redis/redis/v8/internal/proto",
 		},
+		{
+			path: "github.com/go-redis/redis/internal/proto",
+			pkg: &Package{
+				PkgDir:    "internal/proto",
+				ModPrefix: "github.com/go-redis/redis",
+			},
+			version: "v6.0.1+incompatible",
+			pkgpath: "github.com/go-redis/redis/internal/proto",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
