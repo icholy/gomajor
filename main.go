@@ -16,9 +16,22 @@ import (
 )
 
 func main() {
-	if err := get(); err != nil {
-		log.Fatal(err)
+	flag.Parse()
+	switch flag.Arg(0) {
+	case "get":
+		if err := get(); err != nil {
+			log.Fatal(err)
+		}
+	case "list":
+		log.Print("list")
+	default:
+		log.Fatal("no command specified")
 	}
+}
+
+func list() error {
+	log.Println("list")
+	return nil
 }
 
 func get() error {
@@ -26,11 +39,11 @@ func get() error {
 	flag.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	flag.BoolVar(&goget, "get", true, "run go get")
 	flag.Parse()
-	if flag.NArg() != 1 {
+	if flag.NArg() != 2 {
 		return fmt.Errorf("missing package spec")
 	}
 	// figure out the correct import path
-	pkgpath, version := packages.SplitSpec(flag.Arg(0))
+	pkgpath, version := packages.SplitSpec(flag.Arg(1))
 	pkg, err := packages.Load(pkgpath)
 	if err != nil {
 		return err
