@@ -2,6 +2,7 @@
 
 ```
 $ gomajor help
+
 GoMajor is an experimental tool for major version upgrades
 
 Usage:
