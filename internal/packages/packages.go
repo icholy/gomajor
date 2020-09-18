@@ -104,6 +104,11 @@ func (pkg Package) Path() string {
 	return path.Join(pkg.ModPath(), pkg.PkgDir)
 }
 
+func (pkg Package) PathWithVersion(version string) string {
+	pkg.Version = version
+	return pkg.Path()
+}
+
 func (pkg Package) FindModPath(pkgpath string) (string, bool) {
 	if !strings.HasPrefix(pkgpath, pkg.ModPrefix) {
 		return "", false

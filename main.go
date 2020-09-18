@@ -63,13 +63,13 @@ func list() error {
 			fmt.Printf("%s: not supported\n", pkg.ModPrefix)
 			continue
 		}
-		v, err := latest.Version(pkg.Path("v1.0.0"))
+		v, err := latest.Version(pkg.Path())
 		if err != nil {
-			fmt.Printf("%s: failed: %v\n", pkg.ModPath(""), err)
+			fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
 			continue
 		}
 		if semver.Compare(v, pkg.Version) > 0 {
-			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(""), pkg.Version, v)
+			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(), pkg.Version, v)
 		}
 	}
 	return nil
@@ -101,7 +101,7 @@ func get() error {
 	}
 	// go get
 	if goget {
-		spec := pkg.Path(version)
+		spec := pkg.PathWithVersion(version)
 		if version != "" {
 			spec += "@" + semver.Canonical(version)
 		}
@@ -128,9 +128,10 @@ func get() error {
 			return "", false
 		}
 		newpath := packages.Package{
+			Version:   version,
 			PkgDir:    pkgdir,
 			ModPrefix: pkg.ModPrefix,
-		}.Path(version)
+		}.Path()
 		if newpath == path {
 			return "", false
 		}
