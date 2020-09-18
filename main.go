@@ -39,11 +39,11 @@ func list() error {
 	for _, mod := range direct {
 		v, err := latest.Version(mod.Prefix)
 		if err != nil {
-			log.Printf("%s: %v", mod.Path, err)
+			log.Printf("%s: failed: %v", mod.Path, err)
 			continue
 		}
 		if semver.Compare(v, mod.Version) > 0 {
-			log.Printf("%s: %v", mod.Path, v)
+			log.Printf("%s: %s [latest %v]", mod.Path, mod.Version, v)
 		}
 	}
 	return nil
