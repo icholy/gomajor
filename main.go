@@ -16,28 +16,34 @@ import (
 )
 
 func main() {
+	if err := get(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func get() error {
 	var rewrite, goget bool
 	flag.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	flag.BoolVar(&goget, "get", true, "run go get")
 	flag.Parse()
 	if flag.NArg() != 1 {
-		log.Fatal("missing package spec")
+		return fmt.Errorf("missing package spec")
 	}
 	// figure out the correct import path
 	pkgpath, version := packages.SplitSpec(flag.Arg(0))
 	pkg, err := packages.Load(pkgpath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	// figure out what version to get
 	if version == "latest" {
 		version, err = latest.Version(pkg.ModPrefix)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	if version != "" && !semver.IsValid(version) {
-		log.Fatalf("invalid version: %s", version)
+		return fmt.Errorf("invalid version: %s", version)
 	}
 	// go get
 	if goget {
@@ -50,14 +56,14 @@ func main() {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	// rewrite imports
 	if !rewrite {
-		return
+		return nil
 	}
-	err = importpaths.Rewrite(".", func(name, path string) (string, bool) {
+	return importpaths.Rewrite(".", func(name, path string) (string, bool) {
 		modpath, ok := pkg.FindModPath(path)
 		if !ok {
 			return "", false
@@ -77,7 +83,4 @@ func main() {
 		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
 		return newpath, true
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
 }
