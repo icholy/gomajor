@@ -15,7 +15,24 @@ import (
 	"github.com/icholy/gomajor/internal/packages"
 )
 
+var help = `
+GoMajor is an experimental tool for major version upgrades
+
+Usage:
+
+    gomajor <command> [arguments]
+
+The commands are:
+
+    get     upgrade to a major version
+    list    list available updates
+    help    show this help text
+`
+
 func main() {
+	flag.Usage = func() {
+		fmt.Println(help)
+	}
 	flag.Parse()
 	switch flag.Arg(0) {
 	case "get":
@@ -27,7 +44,7 @@ func main() {
 			log.Fatal(err)
 		}
 	default:
-		log.Fatal("no command specified")
+		flag.Usage()
 	}
 }
 
