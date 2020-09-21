@@ -45,4 +45,3 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 * `@latest` scrapes pkg.go.dev and will stop working at some point.
 * `@master` is not supported.
 * gopkg.in imports are not supported.
-* +incompatible versions are not supported.
