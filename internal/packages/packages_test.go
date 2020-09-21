@@ -56,6 +56,14 @@ func TestPackage(t *testing.T) {
 			version: "v6.0.1+incompatible",
 			pkgpath: "github.com/go-redis/redis/internal/proto",
 		},
+		{
+			path: "gopkg.in/yaml.v1",
+			pkg: &Package{
+				ModPrefix: "gopkg.in/yaml",
+			},
+			version: "v2.0.0",
+			pkgpath: "gopkg.in/yaml.v2",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
