@@ -99,7 +99,7 @@ func (pkg Package) Incompatible() bool {
 }
 
 func (pkg Package) ModPath() string {
-	if pkg.Incompatible() {
+	if pkg.Incompatible() && !strings.HasPrefix(pkg.ModPrefix, "gopkg.in") {
 		return pkg.ModPrefix
 	}
 	return JoinPathMajor(pkg.ModPrefix, semver.Major(pkg.Version))
