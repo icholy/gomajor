@@ -20,9 +20,6 @@ type Package struct {
 }
 
 func Load(pkgpath string) (*Package, error) {
-	if strings.HasPrefix(pkgpath, "gopkg.in") {
-		return nil, fmt.Errorf("gopkg.in is not supported")
-	}
 	// create temp module directory
 	dir, err := TempModDir()
 	if err != nil {
@@ -102,7 +99,7 @@ func (pkg Package) Incompatible() bool {
 }
 
 func (pkg Package) ModPath() string {
-	if pkg.Incompatible() {
+	if pkg.Incompatible() && !strings.HasPrefix(pkg.ModPrefix, "gopkg.in") {
 		return pkg.ModPrefix
 	}
 	return JoinPathMajor(pkg.ModPrefix, semver.Major(pkg.Version))
@@ -148,6 +145,10 @@ func SplitSpec(spec string) (path, version string) {
 }
 
 func JoinPathMajor(path, major string) string {
+	if strings.HasPrefix(path, "gopkg.in") {
+		major = strings.TrimPrefix(major, ".")
+		return path + "." + major
+	}
 	major = strings.TrimPrefix(major, "/")
 	if major == "v0" || major == "v1" || major == "" {
 		return path

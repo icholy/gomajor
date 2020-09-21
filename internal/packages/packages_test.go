@@ -56,6 +56,23 @@ func TestPackage(t *testing.T) {
 			version: "v6.0.1+incompatible",
 			pkgpath: "github.com/go-redis/redis/internal/proto",
 		},
+		{
+			path: "gopkg.in/yaml.v1",
+			pkg: &Package{
+				ModPrefix: "gopkg.in/yaml",
+			},
+			version: "v2.0.0",
+			pkgpath: "gopkg.in/yaml.v2",
+		},
+		{
+			path: "gopkg.in/src-d/go-git.v4/plumbing",
+			pkg: &Package{
+				PkgDir:    "plumbing",
+				ModPrefix: "gopkg.in/src-d/go-git",
+			},
+			version: "v3.3.1",
+			pkgpath: "gopkg.in/src-d/go-git.v3/plumbing",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -95,6 +112,14 @@ func TestPackage_FindModPath(t *testing.T) {
 			},
 			path:    "github.com/go-redis/redis/v8",
 			modpath: "github.com/go-redis/redis/v8",
+		},
+		{
+			pkg: &Package{
+				PkgDir:    "plumbing",
+				ModPrefix: "gopkg.in/src-d/go-git",
+			},
+			path:    "gopkg.in/src-d/go-git.v4/plumbing",
+			modpath: "gopkg.in/src-d/go-git.v4",
 		},
 	}
 	for _, tt := range tests {
