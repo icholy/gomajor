@@ -146,6 +146,7 @@ func SplitSpec(spec string) (path, version string) {
 
 func JoinPathMajor(path, major string) string {
 	if strings.HasPrefix(path, "gopkg.in") {
+		major = strings.TrimPrefix(major, ".")
 		return path + "." + major
 	}
 	major = strings.TrimPrefix(major, "/")
