@@ -1,6 +1,8 @@
 package packages
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestPackage(t *testing.T) {
 	tests := []struct {
@@ -56,6 +58,7 @@ func TestPackage(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.path, func(t *testing.T) {
 			t.Parallel()
 			pkg, err := Load(tt.path)
