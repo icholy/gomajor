@@ -10,9 +10,9 @@ import (
 	"golang.org/x/net/html"
 )
 
-// Version returns the latest version of the modpath
-func Version(modpath string) (string, error) {
-	vv, err := Versions(modpath)
+// Version returns the latest version of the package
+func Version(pkgpath string) (string, error) {
+	vv, err := Versions(pkgpath)
 	if err != nil {
 		return "", err
 	}
@@ -34,9 +34,9 @@ func Version(modpath string) (string, error) {
 	return newest, nil
 }
 
-// get all the versions for a module
-func Versions(modpath string) ([]string, error) {
-	url := fmt.Sprintf("https://pkg.go.dev/%s?tab=versions", modpath)
+// Versions returns all versions of a package
+func Versions(pkgpath string) ([]string, error) {
+	url := fmt.Sprintf("https://pkg.go.dev/%s?tab=versions", pkgpath)
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, err
