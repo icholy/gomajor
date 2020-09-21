@@ -43,7 +43,10 @@ func main() {
 		if err := list(); err != nil {
 			log.Fatal(err)
 		}
+	case "help", "":
+		flag.Usage()
 	default:
+		fmt.Printf("unrecognized subcommand: %s\n", flag.Arg(0))
 		flag.Usage()
 	}
 }
