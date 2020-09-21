@@ -64,6 +64,15 @@ func TestPackage(t *testing.T) {
 			version: "v2.0.0",
 			pkgpath: "gopkg.in/yaml.v2",
 		},
+		{
+			path: "gopkg.in/src-d/go-git.v4/plumbing",
+			pkg: &Package{
+				PkgDir:    "plumbing",
+				ModPrefix: "gopkg.in/src-d/go-git",
+			},
+			version: "v3.3.1",
+			pkgpath: "gopkg.in/src-d/go-git.v3/plumbing",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
