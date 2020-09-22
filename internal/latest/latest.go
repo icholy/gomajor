@@ -4,34 +4,32 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/andybalholm/cascadia"
 	"golang.org/x/mod/semver"
 	"golang.org/x/net/html"
 )
 
+// ErrNoVersions is returned when no versions are found for a package path
+var ErrNoVersions = errors.New("no versions found")
+
 // Version returns the latest version of the package
-func Version(pkgpath string) (string, error) {
-	vv, err := Versions(pkgpath)
+// If pre is false, non-v0 pre-release versions are omitted
+func Version(pkgpath string, pre bool) (string, error) {
+	versions, err := Versions(pkgpath)
 	if err != nil {
 		return "", err
 	}
-	var newest string
-	for _, s := range vv {
-		if !semver.IsValid(s) {
-			continue
-		}
-		if newest == "" {
-			newest = s
-		}
-		if semver.Compare(s, newest) > 0 {
-			newest = s
+	sort.Slice(versions, func(i, j int) bool {
+		return semver.Compare(versions[i], versions[j]) > 0
+	})
+	for _, v := range versions {
+		if pre || semver.Major(v) == "v0" || semver.Prerelease(v) == "" {
+			return v, nil
 		}
 	}
-	if newest == "" {
-		return "", errors.New("no valid versions")
-	}
-	return newest, nil
+	return "", ErrNoVersions
 }
 
 // Versions returns all versions of a package
@@ -55,9 +53,14 @@ func Versions(pkgpath string) ([]string, error) {
 	for _, node := range cascadia.QueryAll(doc, sel) {
 		walk(node, func(n *html.Node) {
 			if n.Type == html.TextNode {
-				versions = append(versions, n.Data)
+				if v := n.Data; semver.IsValid(v) {
+					versions = append(versions, v)
+				}
 			}
 		})
+	}
+	if len(versions) == 0 {
+		return nil, ErrNoVersions
 	}
 	return versions, nil
 }
