@@ -52,10 +52,12 @@ func main() {
 }
 
 func list() error {
+	var dir string
 	var pre bool
 	flag.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	flag.StringVar(&dir, "dir", ".", "working directory")
 	flag.Parse()
-	direct, err := packages.Direct(".")
+	direct, err := packages.Direct(dir)
 	if err != nil {
 		return err
 	}
@@ -84,10 +86,12 @@ func list() error {
 }
 
 func get() error {
+	var dir string
 	var rewrite, goget, pre bool
 	flag.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	flag.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	flag.BoolVar(&goget, "get", true, "run go get")
+	flag.StringVar(&dir, "dir", ".", "working directory")
 	flag.Parse()
 	if flag.NArg() != 2 {
 		return fmt.Errorf("missing package spec")
@@ -116,6 +120,7 @@ func get() error {
 		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
+		cmd.Dir = dir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
@@ -126,7 +131,7 @@ func get() error {
 	if !rewrite {
 		return nil
 	}
-	return importpaths.Rewrite(".", func(name, path string) (string, bool) {
+	return importpaths.Rewrite(dir, func(name, path string) (string, bool) {
 		modpath, ok := pkg.FindModPath(path)
 		if !ok {
 			return "", false
