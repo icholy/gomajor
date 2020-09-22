@@ -33,8 +33,11 @@ func main() {
 	flag.Usage = func() {
 		fmt.Println(help)
 	}
-	flag.Parse()
-	switch flag.Arg(0) {
+	var subcommand string
+	if len(os.Args) > 1 {
+		subcommand = os.Args[1]
+	}
+	switch subcommand {
 	case "get":
 		if err := get(); err != nil {
 			log.Fatal(err)
