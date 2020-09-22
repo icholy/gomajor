@@ -34,10 +34,6 @@ func main() {
 		fmt.Println(help)
 	}
 	flag.Parse()
-	if flag.NArg() == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
 	switch flag.Arg(0) {
 	case "get":
 		if err := get(flag.Args()[1:]); err != nil {
