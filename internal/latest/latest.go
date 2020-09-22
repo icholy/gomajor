@@ -18,7 +18,7 @@ func Version(pkgpath string) (string, error) {
 	}
 	var newest string
 	for _, s := range vv {
-		if !semver.IsValid(s) {
+		if !semver.IsValid(s) || semver.Prerelease(s) != "" {
 			continue
 		}
 		if newest == "" {
