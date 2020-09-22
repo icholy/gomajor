@@ -52,6 +52,9 @@ func main() {
 }
 
 func list() error {
+	var pre bool
+	flag.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	flag.Parse()
 	direct, err := packages.Direct(".")
 	if err != nil {
 		return err
@@ -62,12 +65,12 @@ func list() error {
 			continue
 		}
 		seen[pkg.ModPrefix] = true
-		v, err := latest.Version(pkg.ModPath(), true)
+		v, err := latest.Version(pkg.ModPath(), pre)
 		if err != nil {
 			// if the module root is not a package, no versions will be returned.
 			// we fallback to trying to get newer module versions of the full package path.
 			// if the newer major version doesn't contain the package subdirectory, no versions will be returned.
-			v, err = latest.Version(pkg.Path(), true)
+			v, err = latest.Version(pkg.Path(), pre)
 			if err != nil {
 				fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
 				continue
@@ -81,7 +84,8 @@ func list() error {
 }
 
 func get() error {
-	var rewrite, goget bool
+	var rewrite, goget, pre bool
+	flag.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	flag.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	flag.BoolVar(&goget, "get", true, "run go get")
 	flag.Parse()
@@ -96,7 +100,7 @@ func get() error {
 	}
 	// figure out what version to get
 	if version == "latest" {
-		version, err = latest.Version(pkg.Path())
+		version, err = latest.Version(pkg.Path(), pre)
 		if err != nil {
 			return err
 		}
