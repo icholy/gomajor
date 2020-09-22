@@ -33,17 +33,18 @@ func main() {
 	flag.Usage = func() {
 		fmt.Println(help)
 	}
-	var subcommand string
-	if len(os.Args) > 1 {
-		subcommand = os.Args[1]
+	flag.Parse()
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(1)
 	}
-	switch subcommand {
+	switch flag.Arg(0) {
 	case "get":
-		if err := get(); err != nil {
+		if err := get(flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	case "list":
-		if err := list(); err != nil {
+		if err := list(flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	case "help", "":
@@ -54,12 +55,13 @@ func main() {
 	}
 }
 
-func list() error {
+func list(args []string) error {
 	var dir string
 	var pre bool
-	flag.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
-	flag.StringVar(&dir, "dir", ".", "working directory")
-	flag.Parse()
+	fset := flag.NewFlagSet("list", flag.ExitOnError)
+	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.Parse(args)
 	direct, err := packages.Direct(dir)
 	if err != nil {
 		return err
@@ -88,19 +90,20 @@ func list() error {
 	return nil
 }
 
-func get() error {
+func get(args []string) error {
 	var dir string
 	var rewrite, goget, pre bool
-	flag.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
-	flag.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
-	flag.BoolVar(&goget, "get", true, "run go get")
-	flag.StringVar(&dir, "dir", ".", "working directory")
-	flag.Parse()
-	if flag.NArg() != 2 {
+	fset := flag.NewFlagSet("get", flag.ExitOnError)
+	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
+	fset.BoolVar(&goget, "get", true, "run go get")
+	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.Parse(args)
+	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
 	}
 	// figure out the correct import path
-	pkgpath, version := packages.SplitSpec(flag.Arg(1))
+	pkgpath, version := packages.SplitSpec(fset.Arg(0))
 	pkg, err := packages.Load(pkgpath)
 	if err != nil {
 		return err
