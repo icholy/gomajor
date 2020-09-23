@@ -72,12 +72,8 @@ func Direct(dir string) ([]*Package, error) {
 	direct := []*Package{}
 	seen := map[string]bool{}
 	for _, pkg := range pkgs {
-		if mod := pkg.Module; mod != nil && !mod.Indirect && !mod.Main && !seen[pkg.PkgPath] {
+		if mod := pkg.Module; mod != nil && !mod.Indirect && mod.Replace == nil && !mod.Main && !seen[pkg.PkgPath] {
 			seen[pkg.PkgPath] = true
-			version := mod.Version
-			if mod.Replace != nil {
-				version = mod.Replace.Version
-			}
 			modprefix := pkg.Module.Path
 			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
 				modprefix = prefix
@@ -85,7 +81,7 @@ func Direct(dir string) ([]*Package, error) {
 			pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
 			pkgdir = strings.TrimPrefix(pkgdir, "/")
 			direct = append(direct, &Package{
-				Version:   version,
+				Version:   mod.Version,
 				PkgDir:    pkgdir,
 				ModPrefix: modprefix,
 			})
