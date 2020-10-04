@@ -1,7 +1,6 @@
 package modproxy
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -10,7 +9,7 @@ func TestLatest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(mod.Path, mod.Latest())
+	t.Logf("Latest %s %s", mod.Path, mod.Latest())
 }
 
 func TestQuery(t *testing.T) {
@@ -19,13 +18,10 @@ func TestQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !ok {
-		fmt.Println("not found")
+		t.Fatal("not found")
 		return
 	}
-	fmt.Println(mod.Path)
-	for _, v := range mod.Versions {
-		fmt.Println(v)
-	}
+	t.Logf("Latest %s %s", mod.Path, mod.Latest())
 }
 
 func TestModule(t *testing.T) {
