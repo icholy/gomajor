@@ -101,9 +101,8 @@ func Latest(modpath string) (*Module, error) {
 	for i := 0; i < 100; i++ {
 		nextpath, ok := latest.NextMajorPath()
 		if !ok {
-			return nil, fmt.Errorf("bad module path: %s", latest.Path)
+			return latest, nil
 		}
-		fmt.Println("Query", nextpath)
 		next, ok, err := Query(nextpath)
 		if err != nil {
 			return nil, err
