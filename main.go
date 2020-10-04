@@ -11,7 +11,6 @@ import (
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
 	"github.com/icholy/gomajor/internal/packages"
-	"github.com/icholy/gomajor/internal/pkgsite"
 	"golang.org/x/mod/semver"
 )
 
@@ -100,17 +99,18 @@ func get(args []string) error {
 	}
 	// figure out what version to get
 	if version == "latest" {
-		version, err = pkgsite.Latest(pkg.Path(), pre)
+		mod, err := modproxy.Latest(pkg.ModPath())
 		if err != nil {
 			return err
 		}
+		version = mod.Latest(pre)
 	}
 	if version == "master" {
-		version, err := pkgsite.Latest(pkg.Path(), pre)
+		mod, err := modproxy.Latest(pkg.ModPath())
 		if err != nil {
 			return err
 		}
-		pkg.Version = version
+		pkg.Version = mod.Latest(pre)
 	}
 	if version != "" && version != "master" {
 		if !semver.IsValid(version) {
