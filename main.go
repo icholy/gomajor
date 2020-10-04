@@ -100,11 +100,13 @@ func get(args []string) error {
 	// figure out what version to get
 	switch version {
 	case "":
-		mod, err := modproxy.Query(pkg.ModPath())
+		mod, ok, err := modproxy.Query(pkg.ModPath())
 		if err != nil {
 			return err
 		}
-		pkg.Version = mod.Latest(pre)
+		if ok {
+			version = mod.Latest(pre)
+		}
 	case "latest":
 		mod, err := modproxy.Latest(pkg.ModPath())
 		if err != nil {
