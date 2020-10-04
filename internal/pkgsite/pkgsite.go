@@ -1,4 +1,4 @@
-package latest
+package pkgsite
 
 import (
 	"errors"
@@ -14,9 +14,9 @@ import (
 // ErrNoVersions is returned when no versions are found for a package path
 var ErrNoVersions = errors.New("no versions found")
 
-// Version returns the latest version of the package
+// Latest returns the latest version of the package
 // If pre is false, non-v0 pre-release versions are omitted
-func Version(pkgpath string, pre bool) (string, error) {
+func Latest(pkgpath string, pre bool) (string, error) {
 	versions, err := Versions(pkgpath)
 	if err != nil {
 		return "", err

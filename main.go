@@ -8,11 +8,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"golang.org/x/mod/semver"
-
 	"github.com/icholy/gomajor/internal/importpaths"
-	"github.com/icholy/gomajor/internal/latest"
 	"github.com/icholy/gomajor/internal/packages"
+	"github.com/icholy/gomajor/internal/pkgsite"
+	"golang.org/x/mod/semver"
 )
 
 var help = `
@@ -76,12 +75,12 @@ func list(args []string) error {
 		}
 	}
 	for _, pkg := range pkgs {
-		v, err := latest.Version(pkg.ModPath(), pre)
+		v, err := pkgsite.Latest(pkg.ModPath(), pre)
 		if err != nil {
 			// If the module root is not a package, no versions will be returned.
 			// We,'re forced fallback to trying to get newer module versions of the full package path.
 			// If the newer major version doesn't contain the package subdirectory, no versions will be returned.
-			v, err = latest.Version(pkg.Path(), pre)
+			v, err = pkgsite.Latest(pkg.Path(), pre)
 			if err != nil {
 				fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
 				continue
@@ -114,13 +113,13 @@ func get(args []string) error {
 	}
 	// figure out what version to get
 	if version == "latest" {
-		version, err = latest.Version(pkg.Path(), pre)
+		version, err = pkgsite.Latest(pkg.Path(), pre)
 		if err != nil {
 			return err
 		}
 	}
 	if version == "master" {
-		version, err := latest.Version(pkg.Path(), pre)
+		version, err := pkgsite.Latest(pkg.Path(), pre)
 		if err != nil {
 			return err
 		}

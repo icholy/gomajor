@@ -83,7 +83,6 @@ func Query(modpath string) (*Module, bool, error) {
 
 // Latest finds the latest major version of a module
 func Latest(modpath string) (*Module, error) {
-	fmt.Println("Query", modpath)
 	latest, ok, err := Query(modpath)
 	if err != nil {
 		return nil, err
