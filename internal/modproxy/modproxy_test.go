@@ -53,22 +53,34 @@ func TestModule(t *testing.T) {
 			latest:   "v6.14.1+incompatible",
 			nextpath: "github.com/go-redis/redis/v7",
 		},
+		{
+			mod: &Module{
+				Path: "golang.org/x/mod",
+				Versions: []string{
+					"v0.3.0",
+					"v0.1.0",
+					"v0.2.0",
+				},
+			},
+			latest:   "v0.3.0",
+			nextpath: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.mod.Path, func(t *testing.T) {
 			t.Run("Latest", func(t *testing.T) {
 				latest := tt.mod.Latest(false)
 				if latest != tt.latest {
-					t.Fatalf("wrong latest version, want %s, got %s", tt.latest, latest)
+					t.Fatalf("wrong latest version, want %q, got %q", tt.latest, latest)
 				}
 			})
 			t.Run("NextMajorPath", func(t *testing.T) {
 				nextpath, ok := tt.mod.NextMajorPath()
-				if !ok {
+				if !ok && tt.nextpath != "" {
 					t.Fatal("failed to get next major version")
 				}
 				if nextpath != tt.nextpath {
-					t.Fatalf("wrong next path, want %s, got %s", tt.nextpath, nextpath)
+					t.Fatalf("wrong next path, want %q, got %q", tt.nextpath, nextpath)
 				}
 			})
 		})

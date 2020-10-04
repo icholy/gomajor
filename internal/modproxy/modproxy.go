@@ -50,6 +50,9 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if !ok {
 		return "", false
 	}
+	if semver.Major(latest) == "v0" {
+		return "", false
+	}
 	major, err := strconv.Atoi(strings.TrimPrefix(semver.Major(latest), "v"))
 	if err != nil {
 		return "", false
