@@ -62,17 +62,25 @@ func list(args []string) error {
 	if err != nil {
 		return err
 	}
-	seen := map[string]bool{}
+	pkgs := map[string]*packages.Package{}
 	for _, pkg := range direct {
-		if seen[pkg.ModPrefix] {
+		prev, ok := pkgs[pkg.ModPath()]
+		if !ok || prev.PkgDir == "" {
+			pkgs[pkg.ModPath()] = pkg
 			continue
 		}
-		seen[pkg.ModPrefix] = true
+		// We're looking for the shallowest subpackage directory. The assumption is that
+		// it will be less likely to change between versions.
+		if len(strings.Split(pkg.PkgDir, "/")) < len(strings.Split(prev.PkgDir, "/")) {
+			pkgs[pkg.ModPath()] = pkg
+		}
+	}
+	for _, pkg := range pkgs {
 		v, err := latest.Version(pkg.ModPath(), pre)
 		if err != nil {
-			// if the module root is not a package, no versions will be returned.
-			// we fallback to trying to get newer module versions of the full package path.
-			// if the newer major version doesn't contain the package subdirectory, no versions will be returned.
+			// If the module root is not a package, no versions will be returned.
+			// We,'re forced fallback to trying to get newer module versions of the full package path.
+			// If the newer major version doesn't contain the package subdirectory, no versions will be returned.
 			v, err = latest.Version(pkg.Path(), pre)
 			if err != nil {
 				fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
