@@ -116,9 +116,9 @@ func get(args []string) error {
 	}
 	// go get
 	if goget {
-		spec := pkg.PathWithVersion(version)
+		spec := pkg.Path()
 		if version != "" {
-			spec += "@" + semver.Canonical(version)
+			spec = pkg.PathWithVersion(version) + "@" + semver.Canonical(version)
 		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
