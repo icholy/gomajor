@@ -98,21 +98,27 @@ func get(args []string) error {
 		return err
 	}
 	// figure out what version to get
-	if version == "latest" {
+	switch version {
+	case "":
+		mod, err := modproxy.Query(pkg.ModPath())
+		if err != nil {
+			return err
+		}
+		pkg.Version = mod.Latest(pre)
+	case "latest":
 		mod, err := modproxy.Latest(pkg.ModPath())
 		if err != nil {
 			return err
 		}
 		version = mod.Latest(pre)
-	}
-	if version == "master" {
+		pkg.Version = version
+	case "master":
 		mod, err := modproxy.Latest(pkg.ModPath())
 		if err != nil {
 			return err
 		}
 		pkg.Version = mod.Latest(pre)
-	}
-	if version != "" && version != "master" {
+	default:
 		if !semver.IsValid(version) {
 			return fmt.Errorf("invalid version: %s", version)
 		}
