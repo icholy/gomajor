@@ -133,15 +133,15 @@ func get(args []string) error {
 	if !rewrite {
 		return nil
 	}
-	return importpaths.Rewrite(dir, func(name, path string) (string, bool) {
+	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
 		modpath, ok := pkg.FindModPath(path)
 		if !ok {
-			return "", false
+			return "", importpaths.ErrSkip
 		}
 		pkgdir := strings.TrimPrefix(path, modpath)
 		pkgdir = strings.TrimPrefix(pkgdir, "/")
 		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
-			return "", false
+			return "", importpaths.ErrSkip
 		}
 		newpath := packages.Package{
 			Version:   version,
@@ -149,9 +149,9 @@ func get(args []string) error {
 			ModPrefix: pkg.ModPrefix,
 		}.Path()
 		if newpath == path {
-			return "", false
+			return "", importpaths.ErrSkip
 		}
 		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
-		return newpath, true
+		return newpath, nil
 	})
 }

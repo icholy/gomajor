@@ -1,6 +1,7 @@
 package importpaths
 
 import (
+	"errors"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -11,9 +12,12 @@ import (
 	"strings"
 )
 
+// ErrSkip is used to signal that an import should be skipped
+var ErrSkip = errors.New("skip import")
+
 // ReplaceFunc is called with every import path and returns the replacement path
 // if the second return parameter is false, the replacement doesn't happen
-type ReplaceFunc func(name, path string) (string, bool)
+type ReplaceFunc func(name, path string) (string, error)
 
 // Rewrite takes a directory path and a function for replacing imports paths
 func Rewrite(dir string, replace ReplaceFunc) error {
@@ -70,10 +74,15 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		}
 
 		// replace the value using the replace function
-		if path, ok := replace(name, path); ok {
-			i.Path.Value = strconv.Quote(path)
-			change = true
+		path, err = replace(name, path)
+		if err != nil {
+			if err == ErrSkip {
+				continue
+			}
+			return err
 		}
+		i.Path.Value = strconv.Quote(path)
+		change = true
 	}
 
 	for _, cg := range f.Comments {
@@ -92,10 +101,15 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 				}
 
 				// match the comment import path with the given replacement map
-				if ctext, ok := replace(name, ctext); ok {
-					c.Text = "// import " + strconv.Quote(ctext)
-					change = true
+				ctext, err = replace(name, ctext)
+				if err != nil {
+					if err == ErrSkip {
+						continue
+					}
+					return err
 				}
+				c.Text = "// import " + strconv.Quote(ctext)
+				change = true
 			}
 		}
 	}
