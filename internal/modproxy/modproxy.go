@@ -29,7 +29,6 @@ func (m *Module) Latest(pre bool) string {
 		if !semver.IsValid(v) {
 			continue
 		}
-		//
 		if !pre && semver.Major(v) != "v0" && semver.Prerelease(v) != "" {
 			continue
 		}
