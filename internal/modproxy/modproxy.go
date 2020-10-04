@@ -64,7 +64,8 @@ func (m *Module) NextMajorPath() (string, bool) {
 // Query the module proxy for all versions of a module.
 // If the module does not exist, the second return parameter will be false
 func Query(modpath string) (*Module, bool, error) {
-	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", modpath)
+	escaped, err := module.EscapePath(modpath)
+	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", escaped)
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, false, err

@@ -13,7 +13,7 @@ func TestLatest(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	mod, ok, err := Query("github.com/go-redis/redis")
+	mod, ok, err := Query("github.com/DATA-DOG/go-sqlmock")
 	if err != nil {
 		t.Fatal(err)
 	}
