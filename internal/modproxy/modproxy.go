@@ -18,11 +18,16 @@ type Module struct {
 }
 
 // Latest returns the latest version.
-// If there are no vesrions, the empty string is returned.
-func (m *Module) Latest() string {
+// If there are no versions, the empty string is returned.
+// If pre is false, non-v0 pre-release versions will are excluded.
+func (m *Module) Latest(pre bool) string {
 	var max string
 	for _, v := range m.Versions {
 		if !semver.IsValid(v) {
+			continue
+		}
+		//
+		if !pre && semver.Major(v) != "v0" && semver.Prerelease(v) != "" {
 			continue
 		}
 		if max == "" {
@@ -37,7 +42,7 @@ func (m *Module) Latest() string {
 
 // NextMajorPath returns the module path of the next major version
 func (m *Module) NextMajorPath() (string, bool) {
-	latest := m.Latest()
+	latest := m.Latest(true)
 	if latest == "" {
 		return "", false
 	}

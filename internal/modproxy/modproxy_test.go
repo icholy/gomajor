@@ -9,7 +9,7 @@ func TestLatest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.Latest())
+	t.Logf("Latest %s %s", mod.Path, mod.Latest(false))
 }
 
 func TestQuery(t *testing.T) {
@@ -21,7 +21,7 @@ func TestQuery(t *testing.T) {
 		t.Fatal("not found")
 		return
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.Latest())
+	t.Logf("Latest %s %s", mod.Path, mod.Latest(false))
 }
 
 func TestModule(t *testing.T) {
@@ -57,7 +57,7 @@ func TestModule(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.mod.Path, func(t *testing.T) {
 			t.Run("Latest", func(t *testing.T) {
-				latest := tt.mod.Latest()
+				latest := tt.mod.Latest(false)
 				if latest != tt.latest {
 					t.Fatalf("wrong latest version, want %s, got %s", tt.latest, latest)
 				}
