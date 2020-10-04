@@ -111,14 +111,24 @@ func get(args []string) error {
 			return err
 		}
 	}
-	if version != "" && !semver.IsValid(version) {
-		return fmt.Errorf("invalid version: %s", version)
+	if version == "master" {
+		version, err := latest.Version(pkg.Path(), pre)
+		if err != nil {
+			return err
+		}
+		pkg.Version = version
+	}
+	if version != "" && version != "master" {
+		if !semver.IsValid(version) {
+			return fmt.Errorf("invalid version: %s", version)
+		}
+		pkg.Version = version
 	}
 	// go get
 	if goget {
 		spec := pkg.Path()
 		if version != "" {
-			spec = pkg.PathWithVersion(version) + "@" + version
+			spec += "@" + version
 		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
@@ -144,7 +154,7 @@ func get(args []string) error {
 			return "", importpaths.ErrSkip
 		}
 		newpath := packages.Package{
-			Version:   version,
+			Version:   pkg.Version,
 			PkgDir:    pkgdir,
 			ModPrefix: pkg.ModPrefix,
 		}.Path()
