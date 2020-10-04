@@ -40,5 +40,7 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 
 ### Warning:
 
+* By default, the `list` command will only fetch cached content from the module proxy.
+    * This behaviour can be changed with the `-cached` flag.
 * `@v` suffix doesn't work for `+incompatible` versions (just use `go get`).
 * If you have multiple major versions imported, **ALL** of them will be rewritten.
