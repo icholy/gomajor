@@ -11,6 +11,9 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+// DisableModuleFetch sets the Disable-Module-Fetch header to true
+var DisableModuleFetch bool
+
 // Module contains the module path and versions
 type Module struct {
 	Path     string
@@ -63,10 +66,18 @@ func (m *Module) NextMajorPath() (string, bool) {
 
 // Query the module proxy for all versions of a module.
 // If the module does not exist, the second return parameter will be false
-func Query(modpath string) (*Module, bool, error) {
+// cached sets the Disable-Module-Fetch: true header
+func Query(modpath string, cached bool) (*Module, bool, error) {
 	escaped, err := module.EscapePath(modpath)
 	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", escaped)
-	res, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, false, err
+	}
+	if cached {
+		req.Header.Set("Disable-Module-Fetch", "true")
+	}
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, false, err
 	}
@@ -91,8 +102,9 @@ func Query(modpath string) (*Module, bool, error) {
 }
 
 // Latest finds the latest major version of a module
-func Latest(modpath string) (*Module, error) {
-	latest, ok, err := Query(modpath)
+// cached sets the Disable-Module-Fetch: true header
+func Latest(modpath string, cached bool) (*Module, error) {
+	latest, ok, err := Query(modpath, cached)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +116,7 @@ func Latest(modpath string) (*Module, error) {
 		if !ok {
 			return latest, nil
 		}
-		next, ok, err := Query(nextpath)
+		next, ok, err := Query(nextpath, cached)
 		if err != nil {
 			return nil, err
 		}

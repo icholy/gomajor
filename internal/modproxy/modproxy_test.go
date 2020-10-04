@@ -5,7 +5,7 @@ import (
 )
 
 func TestLatest(t *testing.T) {
-	mod, err := Latest("github.com/go-redis/redis")
+	mod, err := Latest("github.com/go-redis/redis", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -13,7 +13,7 @@ func TestLatest(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	mod, ok, err := Query("github.com/DATA-DOG/go-sqlmock")
+	mod, ok, err := Query("github.com/DATA-DOG/go-sqlmock", true)
 	if err != nil {
 		t.Fatal(err)
 	}

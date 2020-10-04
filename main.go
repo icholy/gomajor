@@ -53,9 +53,11 @@ func main() {
 func list(args []string) error {
 	var dir string
 	var pre bool
+	var cached bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.Parse(args)
 	direct, err := packages.Direct(dir)
 	if err != nil {
@@ -67,7 +69,7 @@ func list(args []string) error {
 			continue
 		}
 		seen[pkg.ModPrefix] = true
-		mod, err := modproxy.Latest(pkg.ModPath())
+		mod, err := modproxy.Latest(pkg.ModPath(), cached)
 		if err != nil {
 			fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
 			continue
@@ -81,12 +83,13 @@ func list(args []string) error {
 
 func get(args []string) error {
 	var dir string
-	var rewrite, goget, pre bool
+	var rewrite, goget, pre, cached bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.Parse(args)
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
@@ -100,7 +103,7 @@ func get(args []string) error {
 	// figure out what version to get
 	switch version {
 	case "":
-		mod, ok, err := modproxy.Query(pkg.ModPath())
+		mod, ok, err := modproxy.Query(pkg.ModPath(), cached)
 		if err != nil {
 			return err
 		}
@@ -108,14 +111,14 @@ func get(args []string) error {
 			version = mod.Latest(pre)
 		}
 	case "latest":
-		mod, err := modproxy.Latest(pkg.ModPath())
+		mod, err := modproxy.Latest(pkg.ModPath(), cached)
 		if err != nil {
 			return err
 		}
 		version = mod.Latest(pre)
 		pkg.Version = version
 	case "master":
-		mod, err := modproxy.Latest(pkg.ModPath())
+		mod, err := modproxy.Latest(pkg.ModPath(), cached)
 		if err != nil {
 			return err
 		}
