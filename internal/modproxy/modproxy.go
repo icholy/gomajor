@@ -18,7 +18,7 @@ type Module struct {
 }
 
 // Latest returns the latest version.
-// If there are not vesrions, the empty string is returned.
+// If there are no vesrions, the empty string is returned.
 func (m *Module) Latest() string {
 	var max string
 	for _, v := range m.Versions {
