@@ -89,7 +89,7 @@ func get(args []string) error {
 	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
-	fset.BoolVar(&cached, "cached", false, "only fetch cached content from the module proxy")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.Parse(args)
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
