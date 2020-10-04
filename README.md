@@ -47,3 +47,4 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
     * https://proxy.golang.org/ only allows listing minor versions.
     * https://github.com/golang/go/issues/36785
     * https://github.com/golang/go/issues/40323
+    * https://github.com/golang/go/issues/40323
