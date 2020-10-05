@@ -2,7 +2,9 @@ package modproxy
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"path"
 	"strconv"
@@ -94,11 +96,15 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		if res.StatusCode == http.StatusGone {
-			// version does not exist
+		body, _ := ioutil.ReadAll(res.Body)
+		if res.StatusCode == http.StatusGone && bytes.HasPrefix(body, []byte("not found:")) {
 			return nil, false, nil
 		}
-		return nil, false, fmt.Errorf("proxy request failed: %s", res.Status)
+		msg := string(body)
+		if msg == "" {
+			msg = res.Status
+		}
+		return nil, false, fmt.Errorf("proxy: %s", msg)
 	}
 	var mod Module
 	mod.Path = modpath
