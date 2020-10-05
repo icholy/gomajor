@@ -43,15 +43,8 @@ func Direct(dir string) ([]*Package, error) {
 	return direct, nil
 }
 
-func (pkg Package) Incompatible() bool {
-	return strings.Contains(pkg.Version, "+incompatible")
-}
-
 func (pkg Package) ModPath() string {
-	if pkg.Incompatible() && !strings.HasPrefix(pkg.ModPrefix, "gopkg.in") {
-		return pkg.ModPrefix
-	}
-	return JoinPathMajor(pkg.ModPrefix, semver.Major(pkg.Version))
+	return JoinPathMajor(pkg.ModPrefix, pkg.Version)
 }
 
 func (pkg Package) Path() string {
@@ -88,13 +81,14 @@ func SplitSpec(spec string) (path, version string) {
 	return
 }
 
-func JoinPathMajor(path, major string) string {
+func JoinPathMajor(path, version string) string {
+	version = strings.TrimPrefix(version, ".")
+	version = strings.TrimPrefix(version, "/")
+	major := semver.Major(version)
 	if strings.HasPrefix(path, "gopkg.in") {
-		major = strings.TrimPrefix(major, ".")
 		return path + "." + major
 	}
-	major = strings.TrimPrefix(major, "/")
-	if major == "v0" || major == "v1" || major == "" {
+	if major == "" || major == "v0" || major == "v1" || strings.Contains(version, "+incompatible") {
 		return path
 	}
 	if !strings.HasSuffix(path, "/") {
