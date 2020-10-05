@@ -135,7 +135,7 @@ func get(args []string) error {
 	}
 	// go get
 	if goget {
-		spec := pkg.Path()
+		spec := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir)
 		if version != "" {
 			spec += "@" + version
 		}
