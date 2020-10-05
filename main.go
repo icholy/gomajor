@@ -160,11 +160,7 @@ func get(args []string) error {
 		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
 			return "", importpaths.ErrSkip
 		}
-		newpath := packages.Package{
-			Version:   pkg.Version,
-			PkgDir:    pkgdir,
-			ModPrefix: pkg.ModPrefix,
-		}.Path()
+		newpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkgdir)
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}

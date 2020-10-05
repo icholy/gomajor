@@ -212,7 +212,7 @@ func TestPackage(t *testing.T) {
 			if pkg.ModPrefix != tt.pkg.ModPrefix {
 				t.Errorf("wrong ModPrefix: got %q, want %q", pkg.ModPrefix, tt.pkg.ModPrefix)
 			}
-			if pkgpath := pkg.Path(); pkgpath != tt.pkgpath {
+			if pkgpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir); pkgpath != tt.pkgpath {
 				t.Errorf("wrong package path: got %q, want %q", pkgpath, tt.pkgpath)
 			}
 		})

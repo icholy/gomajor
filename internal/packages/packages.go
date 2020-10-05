@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"path"
 	"strings"
 
 	"golang.org/x/mod/module"
@@ -52,10 +51,6 @@ func (pkg Package) ModPath() string {
 	return JoinPath(pkg.ModPrefix, pkg.Version, "")
 }
 
-func (pkg Package) Path() string {
-	return path.Join(pkg.ModPath(), pkg.PkgDir)
-}
-
 func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	if !strings.HasPrefix(pkgpath, modprefix) {
 		return "", "", false
@@ -75,6 +70,10 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	}
 	pkgdir = strings.TrimPrefix(pkgpath[len(modpath):], "/")
 	return modpath, pkgdir, true
+}
+
+func ModPathWithVersion(modpath, version string) string {
+	return JoinPath(ModPrefix(modpath), version, "")
 }
 
 func SplitSpec(spec string) (path, version string) {
