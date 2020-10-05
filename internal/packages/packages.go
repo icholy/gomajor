@@ -1,10 +1,7 @@
 package packages
 
 import (
-	"io/ioutil"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/mod/module"
@@ -132,19 +129,4 @@ func JoinPathMajor(path, major string) string {
 		path += "/"
 	}
 	return path + major
-}
-
-func TempModDir() (string, error) {
-	dir, err := ioutil.TempDir("", "gomajor_*")
-	if err != nil {
-		return "", err
-	}
-	modfile := "module temp"
-	modpath := filepath.Join(dir, "go.mod")
-	err = ioutil.WriteFile(modpath, []byte(modfile), os.ModePerm)
-	if err != nil {
-		_ = os.RemoveAll(dir) // best effort
-		return "", err
-	}
-	return dir, nil
 }
