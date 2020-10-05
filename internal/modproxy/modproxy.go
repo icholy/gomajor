@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 
@@ -125,4 +126,24 @@ func Latest(modpath string, cached bool) (*Module, error) {
 		latest = next
 	}
 	return nil, fmt.Errorf("request limit exceeded")
+}
+
+// ForPackage tries to find the module path for the provided package path
+func ForPackage(pkgpath string, cached bool) (*Module, error) {
+	prefix := pkgpath
+	for prefix != "" {
+		mod, ok, err := Query(prefix, cached)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			return mod, nil
+		}
+		remaining, last := path.Split(prefix)
+		if last == "" {
+			break
+		}
+		prefix = strings.TrimSuffix(remaining, "/")
+	}
+	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 }

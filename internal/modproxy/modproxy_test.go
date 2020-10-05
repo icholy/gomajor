@@ -24,6 +24,33 @@ func TestQuery(t *testing.T) {
 	t.Logf("Latest %s %s", mod.Path, mod.Latest(false))
 }
 
+func TestForPackage(t *testing.T) {
+	tests := []struct {
+		pkgpath string
+		modpath string
+	}{
+		{
+			pkgpath: "github.com/go-redis/redis",
+			modpath: "github.com/go-redis/redis",
+		},
+		{
+			pkgpath: "github.com/google/go-cmp/cmp",
+			modpath: "github.com/google/go-cmp",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.pkgpath, func(t *testing.T) {
+			mod, err := ForPackage(tt.pkgpath, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if mod.Path != tt.modpath {
+				t.Fatalf("invalid modpath, want %q, got %q", tt.modpath, mod.Path)
+			}
+		})
+	}
+}
+
 func TestModule(t *testing.T) {
 	tests := []struct {
 		mod      *Module
