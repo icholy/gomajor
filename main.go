@@ -125,9 +125,10 @@ func get(args []string) error {
 		}
 		version = latest.MaxVersion(pre)
 	default:
-		if !semver.IsValid(version) {
-			return fmt.Errorf("invalid version: %s", version)
+		if !semver.IsValid(target) {
+			return fmt.Errorf("invalid version: %s", target)
 		}
+		// best effort to detect +incompatible versions
 		if v := mod.BestMatch(target); v != "" {
 			version = v
 		} else {
