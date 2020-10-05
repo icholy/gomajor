@@ -59,10 +59,6 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	return modpath, pkgdir, true
 }
 
-func PathWithVersion(modpath, version string) string {
-	return JoinPath(ModPrefix(modpath), version, "")
-}
-
 func SplitSpec(spec string) (path, version string) {
 	parts := strings.SplitN(spec, "@", 2)
 	if len(parts) == 2 {
