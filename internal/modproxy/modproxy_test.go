@@ -57,9 +57,17 @@ func TestQueryPackage(t *testing.T) {
 
 func TestModule(t *testing.T) {
 	tests := []struct {
-		mod      *Module
+		mod *Module
+
+		// for NextPath
 		nextpath string
-		latest   string
+
+		// for Latest
+		latest string
+
+		// for BestMatch
+		query string
+		best  string
 	}{
 		{
 			mod: &Module{
@@ -83,6 +91,8 @@ func TestModule(t *testing.T) {
 			},
 			latest:   "v6.14.1+incompatible",
 			nextpath: "github.com/go-redis/redis/v7",
+			query:    "v6.7",
+			best:     "v6.8.2+incompatible",
 		},
 		{
 			mod: &Module{
@@ -95,6 +105,8 @@ func TestModule(t *testing.T) {
 			},
 			latest:   "v0.3.0",
 			nextpath: "",
+			query:    "v0",
+			best:     "v0.3.1",
 		},
 		{
 			mod: &Module{
@@ -105,6 +117,8 @@ func TestModule(t *testing.T) {
 			},
 			latest:   "v2.2.8",
 			nextpath: "gopkg.in/yaml.v3",
+			query:    "v1",
+			best:     "",
 		},
 	}
 	for _, tt := range tests {

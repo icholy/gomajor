@@ -168,3 +168,28 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 	}
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 }
+
+// BestMatch will return the highest version compatible with the provided version
+func (m *Module) BestMatch(query string) string {
+	dots := strings.Count(query, ".")
+	if dots == 2 {
+		// if it's a fully specified version, we expect an exact match
+		for _, v := range m.Versions {
+			if semver.Compare(v, query) == 0 {
+				return v
+			}
+		}
+		return ""
+	}
+	for dots < 2 {
+		query += ".999999999999999"
+		dots++
+	}
+	var max string
+	for _, v := range m.Versions {
+		if semver.Compare(v, max) >= 0 {
+			max = semver.Max(max, v)
+		}
+	}
+	return max
+}

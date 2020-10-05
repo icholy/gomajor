@@ -2,7 +2,13 @@ package packages
 
 import (
 	"testing"
+
+	"golang.org/x/mod/semver"
 )
+
+func TestCompare(t *testing.T) {
+	t.Log("Compare", semver.Compare("v3+incompatible", "v3.0.2"))
+}
 
 func TestJoinPath(t *testing.T) {
 	tests := []struct {
