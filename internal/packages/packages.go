@@ -8,6 +8,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+// Direct returns a list of all modules that are direct dependencies
 func Direct(dir string) ([]*packages.Module, error) {
 	cfg := packages.Config{
 		Mode:  packages.NeedModule,
@@ -38,6 +39,8 @@ func ModPrefix(modpath string) string {
 	return prefix
 }
 
+// SplitPath splits the package path into the module path and the package subdirectory.
+// It requires the a module path prefix to figure this out.
 func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	if !strings.HasPrefix(pkgpath, modprefix) {
 		return "", "", false
@@ -59,17 +62,19 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	return modpath, pkgdir, true
 }
 
-func SplitSpec(spec string) (path, version string) {
+// SplitSpec splits the path/to/package@target format strings
+func SplitSpec(spec string) (path, target string) {
 	parts := strings.SplitN(spec, "@", 2)
 	if len(parts) == 2 {
 		path = parts[0]
-		version = parts[1]
+		target = parts[1]
 	} else {
 		path = spec
 	}
 	return
 }
 
+// JoinPath creates a full package path given a module prefix, version, and package directory.
 func JoinPath(modprefix, version, pkgdir string) string {
 	version = strings.TrimPrefix(version, ".")
 	version = strings.TrimPrefix(version, "/")
