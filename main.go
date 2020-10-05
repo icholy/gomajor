@@ -15,7 +15,7 @@ import (
 )
 
 var help = `
-GoMajor is an experimental tool for major version upgrades
+GoMajor is a tool for major version upgrades
 
 Usage:
 
