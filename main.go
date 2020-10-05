@@ -59,12 +59,12 @@ func list(args []string) error {
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.Parse(args)
-	direct, err := packages.Direct(dir)
+	dependencies, err := packages.Direct(dir)
 	if err != nil {
 		return err
 	}
 	seen := map[string]bool{}
-	for _, dep := range direct {
+	for _, dep := range dependencies {
 		modprefix := packages.ModPrefix(dep.Path)
 		if seen[modprefix] {
 			continue

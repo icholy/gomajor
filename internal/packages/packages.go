@@ -1,34 +1,16 @@
 package packages
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
-	"golang.org/x/tools/go/packages"
 )
-
-// Direct returns a list of all modules that are direct dependencies
-func Direct(dir string) ([]*packages.Module, error) {
-	cfg := packages.Config{
-		Mode:  packages.NeedModule,
-		Dir:   dir,
-		Tests: true,
-	}
-	pkgs, err := packages.Load(&cfg, "all")
-	if err != nil {
-		return nil, err
-	}
-	direct := []*packages.Module{}
-	seen := map[string]bool{}
-	for _, pkg := range pkgs {
-		if mod := pkg.Module; mod != nil && !mod.Indirect && mod.Replace == nil && !mod.Main && !seen[mod.Path] {
-			seen[mod.Path] = true
-			direct = append(direct, mod)
-		}
-	}
-	return direct, nil
-}
 
 // ModPrefix returns the module path with no SIV
 func ModPrefix(modpath string) string {
@@ -103,4 +85,57 @@ func JoinPath(modprefix, version, pkgdir string) string {
 		pkgpath += "/" + pkgdir
 	}
 	return pkgpath
+}
+
+// FindModFile recursively searches up the directory structure until it
+// finds the go.mod, reaches the root of the directory tree, or encounters
+// an error.
+func FindModFile(dir string) (string, error) {
+	var err error
+	dir, err = filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+	for {
+		name := filepath.Join(dir, "go.mod")
+		_, err := os.Stat(name)
+		if err == nil {
+			return name, nil
+		}
+		if !os.IsNotExist(err) {
+			return "", err
+		}
+		if dir == "" || dir == "." || dir == "/" {
+			break
+		}
+		dir = filepath.Dir(dir)
+	}
+	return "", fmt.Errorf("cannot find go.mod")
+}
+
+// Direct returns a list of all modules that are direct dependencies
+func Direct(dir string) ([]module.Version, error) {
+	name, err := FindModFile(dir)
+	if err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	file, err := modfile.Parse(name, data, nil)
+	if err != nil {
+		return nil, err
+	}
+	replaced := map[string]bool{}
+	for _, r := range file.Replace {
+		replaced[r.Old.Path] = true
+	}
+	var mods []module.Version
+	for _, req := range file.Require {
+		if !req.Indirect && !replaced[req.Mod.Path] {
+			mods = append(mods, req.Mod)
+		}
+	}
+	return mods, nil
 }
