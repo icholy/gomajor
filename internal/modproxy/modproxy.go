@@ -12,9 +12,6 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-// DisableModuleFetch sets the Disable-Module-Fetch header to true
-var DisableModuleFetch bool
-
 // Module contains the module path and versions
 type Module struct {
 	Path     string
@@ -70,6 +67,7 @@ func (m *Module) NextMajorPath() (string, bool) {
 func Query(modpath string, cached bool) (*Module, bool, error) {
 	escaped, err := module.EscapePath(modpath)
 	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", escaped)
+	fmt.Println("Query", url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, false, err
