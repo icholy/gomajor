@@ -106,11 +106,11 @@ func get(args []string) error {
 	if err != nil {
 		return err
 	}
-	version := mod.MaxVersion(pre)
 	// figure out what version to get
+	var version string
 	switch target {
 	case "":
-		target = version
+		version = mod.MaxVersion(pre)
 	case "latest":
 		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
