@@ -160,7 +160,7 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 					if major, ok := packages.ModMajor(modpath); ok {
 						if v := mod.MaxVersion(major, false); v != "" {
 							spec := packages.JoinPath(modprefix, "", pkgdir) + "@" + v
-							return nil, fmt.Errorf("%s is +incompatible; use %s", major, spec)
+							return nil, fmt.Errorf("%s doesn't support import versioning; use %s", major, spec)
 						}
 						return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 					}
