@@ -37,6 +37,10 @@ func TestForPackage(t *testing.T) {
 			pkgpath: "github.com/google/go-cmp/cmp",
 			modpath: "github.com/google/go-cmp",
 		},
+		{
+			pkgpath: "github.com/go-git/go-git/v5/plumbing/format/commitgraph",
+			modpath: "github.com/go-git/go-git/v5",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.pkgpath, func(t *testing.T) {
