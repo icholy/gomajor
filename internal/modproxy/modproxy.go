@@ -42,6 +42,16 @@ func (m *Module) Latest(pre bool) string {
 	return max
 }
 
+// NextMajor returns the next major version after the provided version
+func NextMajor(version string) (string, error) {
+	major, err := strconv.Atoi(strings.TrimPrefix(semver.Major(version), "v"))
+	if err != nil {
+		return "", err
+	}
+	major++
+	return fmt.Sprintf("v%d", major), nil
+}
+
 // NextMajorPath returns the module path of the next major version
 func (m *Module) NextMajorPath() (string, bool) {
 	latest := m.Latest(true)
@@ -55,12 +65,11 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if semver.Major(latest) == "v0" {
 		return "", false
 	}
-	major, err := strconv.Atoi(strings.TrimPrefix(semver.Major(latest), "v"))
+	next, err := NextMajor(latest)
 	if err != nil {
 		return "", false
 	}
-	major++
-	return packages.JoinPathMajor(prefix, fmt.Sprintf("v%d", major)), true
+	return packages.JoinPathMajor(prefix, next), true
 }
 
 // Query the module proxy for all versions of a module.
