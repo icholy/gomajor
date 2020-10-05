@@ -176,15 +176,11 @@ func Package(pkgpath string, pre bool, cache bool) (*packages.Package, error) {
 		return nil, err
 	}
 	// remove the existing version if there is one
-	modprefix := mod.Path
-	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
-		modprefix = prefix
-	}
 	pkgdir := strings.TrimPrefix(pkgpath, mod.Path)
 	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	return &packages.Package{
 		Version:   mod.Latest(pre),
 		PkgDir:    pkgdir,
-		ModPrefix: modprefix,
+		ModPrefix: packages.ModPrefix(mod.Path),
 	}, nil
 }
