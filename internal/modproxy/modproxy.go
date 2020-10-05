@@ -60,10 +60,6 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if latest == "" {
 		return "", false
 	}
-	prefix, _, ok := module.SplitPathVersion(m.Path)
-	if !ok {
-		return "", false
-	}
 	if semver.Major(latest) == "v0" {
 		return "", false
 	}
@@ -71,6 +67,7 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if err != nil {
 		return "", false
 	}
+	prefix := packages.ModPrefix(m.Path)
 	return packages.JoinPath(prefix, next, ""), true
 }
 

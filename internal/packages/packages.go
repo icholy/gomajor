@@ -39,6 +39,16 @@ func ModPrefix(modpath string) string {
 	return prefix
 }
 
+// ModMajor returns the major version in vN format
+func ModMajor(modpath string) (string, bool) {
+	_, major, ok := module.SplitPathVersion(modpath)
+	if ok {
+		major = strings.TrimPrefix(major, "/")
+		major = strings.TrimPrefix(major, ".")
+	}
+	return major, ok
+}
+
 // SplitPath splits the package path into the module path and the package subdirectory.
 // It requires the a module path prefix to figure this out.
 func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
@@ -55,7 +65,7 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 		modpathlen = len(pkgpath)
 	}
 	modpath = modprefix
-	if _, major, ok := module.SplitPathVersion(pkgpath[:modpathlen]); ok {
+	if major, ok := ModMajor(pkgpath[:modpathlen]); ok {
 		modpath = JoinPath(modprefix, major, "")
 	}
 	pkgdir = strings.TrimPrefix(pkgpath[len(modpath):], "/")
