@@ -17,7 +17,7 @@ type Package struct {
 	ModPrefix string
 }
 
-func Load(pkgpath string, cache bool) (*Package, error) {
+func Load(pkgpath string, pre bool, cache bool) (*Package, error) {
 	mod, err := modproxy.ForPackage(pkgpath, cache)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func Load(pkgpath string, cache bool) (*Package, error) {
 	pkgdir := strings.TrimPrefix(pkgpath, mod.Path)
 	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	return &Package{
-		Version:   mod.Latest(false),
+		Version:   mod.Latest(pre),
 		PkgDir:    pkgdir,
 		ModPrefix: modprefix,
 	}, nil
