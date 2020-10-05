@@ -106,15 +106,6 @@ func get(args []string) error {
 	if err != nil {
 		return err
 	}
-	modprefix := packages.ModPrefix(mod.Path)
-	// try infer the target from SIV
-	if target == "" {
-		if modpath, _, ok := packages.SplitPath(modprefix, pkgpath); ok && modpath != mod.Path {
-			if major, ok := packages.ModMajor(modpath); ok {
-				target = major
-			}
-		}
-	}
 	// figure out what version to get
 	var version string
 	switch target {
@@ -145,6 +136,7 @@ func get(args []string) error {
 		}
 	}
 	// split up the path
+	modprefix := packages.ModPrefix(mod.Path)
 	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// go get
 	if goget {

@@ -155,6 +155,10 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 				return nil, err
 			}
 			if ok {
+				modprefix := packages.ModPrefix(mod.Path)
+				if modpath, _, ok := packages.SplitPath(modprefix, pkgpath); ok && modpath != mod.Path {
+					return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
+				}
 				return mod, nil
 			}
 		}
