@@ -156,8 +156,14 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 			}
 			if ok {
 				modprefix := packages.ModPrefix(mod.Path)
-				if modpath, _, ok := packages.SplitPath(modprefix, pkgpath); ok && modpath != mod.Path {
-					return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
+				if modpath, pkgdir, ok := packages.SplitPath(modprefix, pkgpath); ok && modpath != mod.Path {
+					if version, ok := packages.ModMajor(modpath); ok {
+						if v := mod.MaxVersion(version, false); v != "" {
+							spec := packages.JoinPath(modprefix, "", pkgdir) + "@" + v
+							return nil, fmt.Errorf("module not found: %s; found %s", modpath, spec)
+						}
+						return nil, fmt.Errorf("module not found: %s", pkgpath)
+					}
 				}
 				return mod, nil
 			}
