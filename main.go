@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
+	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 
 	"github.com/icholy/gomajor/internal/importpaths"
@@ -106,6 +108,15 @@ func get(args []string) error {
 	if err != nil {
 		return err
 	}
+	// try infer the target from SIV
+	if target == "" {
+		modprefix := packages.ModPrefix(mod.Path)
+		if modpath, _, ok := packages.SplitPath(modprefix, pkgpath); ok && modpath != mod.Path {
+			if _, major, ok := module.SplitPathVersion(modpath); ok {
+				target = strings.TrimPrefix(major, "/")
+			}
+		}
+	}
 	// figure out what version to get
 	var version string
 	switch target {
@@ -141,8 +152,8 @@ func get(args []string) error {
 	// go get
 	if goget {
 		spec := packages.JoinPath(modprefix, version, pkgdir)
-		if version != "" {
-			spec += "@" + version
+		if target != "" {
+			spec += "@" + target
 		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
