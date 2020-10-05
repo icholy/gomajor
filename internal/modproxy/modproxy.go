@@ -187,8 +187,11 @@ func (m *Module) BestMatch(query string) string {
 	}
 	var max string
 	for _, v := range m.Versions {
-		if semver.Compare(v, max) >= 0 {
-			max = semver.Max(max, v)
+		if semver.Compare(v, query) > 0 {
+			continue
+		}
+		if semver.Compare(v, max) > 0 {
+			max = v
 		}
 	}
 	return max
