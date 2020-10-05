@@ -45,3 +45,40 @@ func TestPackage_FindModPath(t *testing.T) {
 		})
 	}
 }
+
+func TestJoinPathMajor(t *testing.T) {
+	tests := []struct {
+		modprefix string
+		version   string
+		modpath   string
+	}{
+		{
+			modprefix: "github.com/google/go-cmp",
+			version:   "v0.1.2",
+			modpath:   "github.com/google/go-cmp",
+		},
+		{
+			modprefix: "github.com/go-redis/redis",
+			version:   "v6.0.1+incompatible",
+			modpath:   "github.com/go-redis/redis",
+		},
+		{
+			modprefix: "github.com/go-redis/redis",
+			version:   "v8.0.1",
+			modpath:   "github.com/go-redis/redis/v8",
+		},
+		{
+			modprefix: "gopkg.in/yaml",
+			version:   "v3",
+			modpath:   "gopkg.in/yaml.v3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.modpath, func(t *testing.T) {
+			modpath := JoinPathMajor(tt.modprefix, tt.version)
+			if modpath != tt.modpath {
+				t.Fatalf("bad modpath: want %q, got %q", tt.modpath, modpath)
+			}
+		})
+	}
+}
