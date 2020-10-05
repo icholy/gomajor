@@ -145,8 +145,10 @@ func Latest(modpath string, cached bool) (*Module, error) {
 	return nil, fmt.Errorf("request limit exceeded")
 }
 
-// ForPackage tries to find the module path for the provided package path
-func ForPackage(pkgpath string, cached bool) (*Module, error) {
+// PackageModule tries to find the module path for the provided package path
+// it does so by repeatedly chopping off the last path element and trying to
+// use it as a path.
+func PackageModule(pkgpath string, cached bool) (*Module, error) {
 	prefix := pkgpath
 	for prefix != "" {
 		if module.CheckPath(prefix) == nil {
@@ -167,9 +169,9 @@ func ForPackage(pkgpath string, cached bool) (*Module, error) {
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 }
 
-// LoadPackage will query the module proxy for the provided package path
-func LoadPackage(pkgpath string, pre bool, cache bool) (*packages.Package, error) {
-	mod, err := ForPackage(pkgpath, cache)
+// Package will query the module proxy for the provided package path
+func Package(pkgpath string, pre bool, cache bool) (*packages.Package, error) {
+	mod, err := PackageModule(pkgpath, cache)
 	if err != nil {
 		return nil, err
 	}
