@@ -17,8 +17,9 @@ type Package struct {
 
 func Direct(dir string) ([]*Package, error) {
 	cfg := packages.Config{
-		Mode: packages.NeedName | packages.NeedModule,
-		Dir:  dir,
+		Mode:  packages.NeedModule,
+		Dir:   dir,
+		Tests: true,
 	}
 	pkgs, err := packages.Load(&cfg, "all")
 	if err != nil {
@@ -27,17 +28,14 @@ func Direct(dir string) ([]*Package, error) {
 	direct := []*Package{}
 	seen := map[string]bool{}
 	for _, pkg := range pkgs {
-		if mod := pkg.Module; mod != nil && !mod.Indirect && mod.Replace == nil && !mod.Main && !seen[pkg.PkgPath] {
-			seen[pkg.PkgPath] = true
+		if mod := pkg.Module; mod != nil && !mod.Indirect && mod.Replace == nil && !mod.Main && !seen[mod.Path] {
+			seen[mod.Path] = true
 			modprefix := pkg.Module.Path
 			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
 				modprefix = prefix
 			}
-			pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
-			pkgdir = strings.TrimPrefix(pkgdir, "/")
 			direct = append(direct, &Package{
 				Version:   mod.Version,
-				PkgDir:    pkgdir,
 				ModPrefix: modprefix,
 			})
 		}
