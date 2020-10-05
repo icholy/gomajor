@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
@@ -154,12 +153,10 @@ func get(args []string) error {
 		return nil
 	}
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
-		modpath, ok := pkg.FindModPath(path)
+		modpath, pkgdir, ok := packages.SplitPath(pkg.ModPrefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
 		}
-		pkgdir := strings.TrimPrefix(path, modpath)
-		pkgdir = strings.TrimPrefix(pkgdir, "/")
 		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
 			return "", importpaths.ErrSkip
 		}

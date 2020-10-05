@@ -81,11 +81,6 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	return modpath, pkgdir, true
 }
 
-func (pkg Package) FindModPath(pkgpath string) (string, bool) {
-	modpath, _, ok := SplitPath(pkg.ModPrefix, pkgpath)
-	return modpath, ok
-}
-
 func SplitSpec(spec string) (path, version string) {
 	parts := strings.SplitN(spec, "@", 2)
 	if len(parts) == 2 {
