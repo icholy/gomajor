@@ -68,9 +68,10 @@ func list(args []string) error {
 			continue
 		}
 		seen[pkg.ModPrefix] = true
-		mod, err := modproxy.Latest(pkg.ModPath(), cached)
+		modpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir)
+		mod, err := modproxy.Latest(modpath, cached)
 		if err != nil {
-			fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
+			fmt.Printf("%s: failed: %v\n", modpath, err)
 			continue
 		}
 		v := mod.Latest(pre)
@@ -80,7 +81,7 @@ func list(args []string) error {
 		if semver.Compare(v, pkg.Version) <= 0 {
 			continue
 		}
-		fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(), pkg.Version, v)
+		fmt.Printf("%s: %s [latest %v]\n", modpath, pkg.Version, v)
 	}
 	return nil
 }
@@ -104,10 +105,11 @@ func get(args []string) error {
 	if err != nil {
 		return err
 	}
+	modpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir)
 	// figure out what version to get
 	switch version {
 	case "":
-		mod, ok, err := modproxy.Query(pkg.ModPath(), cached)
+		mod, ok, err := modproxy.Query(modpath, cached)
 		if err != nil {
 			return err
 		}
@@ -115,14 +117,14 @@ func get(args []string) error {
 			version = mod.Latest(pre)
 		}
 	case "latest":
-		mod, err := modproxy.Latest(pkg.ModPath(), cached)
+		mod, err := modproxy.Latest(modpath, cached)
 		if err != nil {
 			return err
 		}
 		version = mod.Latest(pre)
 		pkg.Version = version
 	case "master":
-		mod, err := modproxy.Latest(pkg.ModPath(), cached)
+		mod, err := modproxy.Latest(modpath, cached)
 		if err != nil {
 			return err
 		}

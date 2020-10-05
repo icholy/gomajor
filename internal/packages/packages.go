@@ -47,10 +47,6 @@ func ModPrefix(modpath string) string {
 	return prefix
 }
 
-func (pkg Package) ModPath() string {
-	return JoinPath(pkg.ModPrefix, pkg.Version, "")
-}
-
 func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	if !strings.HasPrefix(pkgpath, modprefix) {
 		return "", "", false
