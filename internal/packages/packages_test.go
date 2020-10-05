@@ -33,6 +33,47 @@ func TestJoinPath(t *testing.T) {
 			version:   "v3",
 			pkgpath:   "gopkg.in/yaml.v3",
 		},
+		{
+			pkgdir:    "",
+			modprefix: "gotest.tools",
+			version:   "v3.0.0",
+			pkgpath:   "gotest.tools/v3",
+		},
+		{
+			pkgdir:    "",
+			modprefix: "gotest.tools",
+			version:   "v2.0.1",
+			pkgpath:   "gotest.tools/v2",
+		},
+		{
+			pkgdir:    "assert/opt",
+			modprefix: "gotest.tools",
+			version:   "v1.0.0",
+			pkgpath:   "gotest.tools/assert/opt",
+		},
+		{
+			pkgdir:    "internal/proto",
+			modprefix: "github.com/go-redis/redis",
+			version:   "v8.0.0",
+			pkgpath:   "github.com/go-redis/redis/v8/internal/proto",
+		},
+		{
+			pkgdir:    "internal/proto",
+			modprefix: "github.com/go-redis/redis",
+			version:   "v6.0.1+incompatible",
+			pkgpath:   "github.com/go-redis/redis/internal/proto",
+		},
+		{
+			modprefix: "gopkg.in/yaml",
+			version:   "v2.0.0",
+			pkgpath:   "gopkg.in/yaml.v2",
+		},
+		{
+			pkgdir:    "plumbing",
+			modprefix: "gopkg.in/src-d/go-git",
+			version:   "v3.3.1",
+			pkgpath:   "gopkg.in/src-d/go-git.v3/plumbing",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.pkgpath, func(t *testing.T) {

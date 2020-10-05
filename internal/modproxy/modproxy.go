@@ -22,10 +22,10 @@ type Module struct {
 	Versions []string
 }
 
-// Latest returns the latest version.
+// MaxVersion returns the latest version.
 // If there are no versions, the empty string is returned.
 // If pre is false, non-v0 pre-release versions will are excluded.
-func (m *Module) Latest(pre bool) string {
+func (m *Module) MaxVersion(pre bool) string {
 	var max string
 	for _, v := range m.Versions {
 		if !semver.IsValid(v) {
@@ -56,7 +56,7 @@ func NextMajor(version string) (string, error) {
 
 // NextMajorPath returns the module path of the next major version
 func (m *Module) NextMajorPath() (string, bool) {
-	latest := m.Latest(true)
+	latest := m.MaxVersion(true)
 	if latest == "" {
 		return "", false
 	}
@@ -167,20 +167,4 @@ func PackageModule(pkgpath string, cached bool) (*Module, error) {
 		prefix = strings.TrimSuffix(remaining, "/")
 	}
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
-}
-
-// Package will query the module proxy for the provided package path
-func Package(pkgpath string, pre bool, cache bool) (*packages.Package, error) {
-	mod, err := PackageModule(pkgpath, cache)
-	if err != nil {
-		return nil, err
-	}
-	// remove the existing version if there is one
-	pkgdir := strings.TrimPrefix(pkgpath, mod.Path)
-	pkgdir = strings.TrimPrefix(pkgdir, "/")
-	return &packages.Package{
-		Version:   mod.Latest(pre),
-		PkgDir:    pkgdir,
-		ModPrefix: packages.ModPrefix(mod.Path),
-	}, nil
 }

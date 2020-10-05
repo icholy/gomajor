@@ -63,25 +63,25 @@ func list(args []string) error {
 		return err
 	}
 	seen := map[string]bool{}
-	for _, pkg := range direct {
-		if seen[pkg.ModPrefix] {
+	for _, dep := range direct {
+		prefix := packages.ModPrefix(dep.Path)
+		if seen[prefix] {
 			continue
 		}
-		seen[pkg.ModPrefix] = true
-		modpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir)
-		mod, err := modproxy.Latest(modpath, cached)
+		seen[prefix] = true
+		mod, err := modproxy.Latest(dep.Path, cached)
 		if err != nil {
-			fmt.Printf("%s: failed: %v\n", modpath, err)
+			fmt.Printf("%s: failed: %v\n", mod.Path, err)
 			continue
 		}
-		v := mod.Latest(pre)
-		if major && semver.Compare(semver.Major(v), semver.Major(pkg.Version)) <= 0 {
+		v := mod.MaxVersion(pre)
+		if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
 			continue
 		}
-		if semver.Compare(v, pkg.Version) <= 0 {
+		if semver.Compare(v, dep.Version) <= 0 {
 			continue
 		}
-		fmt.Printf("%s: %s [latest %v]\n", modpath, pkg.Version, v)
+		fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
 	}
 	return nil
 }
@@ -100,44 +100,41 @@ func get(args []string) error {
 		return fmt.Errorf("missing package spec")
 	}
 	// figure out the correct import path
-	pkgpath, version := packages.SplitSpec(fset.Arg(0))
-	pkg, err := modproxy.Package(pkgpath, pre, cached)
+	pkgpath, target := packages.SplitSpec(fset.Arg(0))
+	mod, err := modproxy.PackageModule(pkgpath, cached)
 	if err != nil {
 		return err
 	}
-	modpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir)
+	version := target
 	// figure out what version to get
-	switch version {
+	switch target {
 	case "":
-		mod, ok, err := modproxy.Query(modpath, cached)
-		if err != nil {
-			return err
-		}
-		if ok {
-			version = mod.Latest(pre)
-		}
+		target = mod.MaxVersion(pre)
 	case "latest":
-		mod, err := modproxy.Latest(modpath, cached)
+		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
 			return err
 		}
-		version = mod.Latest(pre)
-		pkg.Version = version
-	case "master":
-		mod, err := modproxy.Latest(modpath, cached)
+		version = latest.MaxVersion(pre)
+		target = version
+	case "master", "default":
+		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
 			return err
 		}
-		pkg.Version = mod.Latest(pre)
+		version = latest.MaxVersion(pre)
 	default:
 		if !semver.IsValid(version) {
 			return fmt.Errorf("invalid version: %s", version)
 		}
-		pkg.Version = version
+		version = target
 	}
+	// split up the path
+	modprefix := packages.ModPrefix(mod.Path)
+	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// go get
 	if goget {
-		spec := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir)
+		spec := packages.JoinPath(modprefix, version, pkgdir)
 		if version != "" {
 			spec += "@" + version
 		}
@@ -155,14 +152,14 @@ func get(args []string) error {
 		return nil
 	}
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
-		_, pkgdir, ok := packages.SplitPath(pkg.ModPrefix, path)
+		_, pkgdir0, ok := packages.SplitPath(modprefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
 		}
-		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
+		if pkgdir != "" && pkgdir != pkgdir0 {
 			return "", importpaths.ErrSkip
 		}
-		newpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkgdir)
+		newpath := packages.JoinPath(modprefix, version, pkgdir0)
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}

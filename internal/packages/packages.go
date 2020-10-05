@@ -8,13 +8,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-type Package struct {
-	Version   string
-	PkgDir    string
-	ModPrefix string
-}
-
-func Direct(dir string) ([]*Package, error) {
+func Direct(dir string) ([]*packages.Module, error) {
 	cfg := packages.Config{
 		Mode:  packages.NeedModule,
 		Dir:   dir,
@@ -24,15 +18,12 @@ func Direct(dir string) ([]*Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	direct := []*Package{}
+	direct := []*packages.Module{}
 	seen := map[string]bool{}
 	for _, pkg := range pkgs {
 		if mod := pkg.Module; mod != nil && !mod.Indirect && mod.Replace == nil && !mod.Main && !seen[mod.Path] {
 			seen[mod.Path] = true
-			direct = append(direct, &Package{
-				Version:   mod.Version,
-				ModPrefix: ModPrefix(pkg.Module.Path),
-			})
+			direct = append(direct, mod)
 		}
 	}
 	return direct, nil
@@ -68,7 +59,7 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	return modpath, pkgdir, true
 }
 
-func ModPathWithVersion(modpath, version string) string {
+func PathWithVersion(modpath, version string) string {
 	return JoinPath(ModPrefix(modpath), version, "")
 }
 

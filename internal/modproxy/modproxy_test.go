@@ -2,8 +2,6 @@ package modproxy
 
 import (
 	"testing"
-
-	"github.com/icholy/gomajor/internal/packages"
 )
 
 func TestLatest(t *testing.T) {
@@ -11,7 +9,7 @@ func TestLatest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.Latest(false))
+	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
 }
 
 func TestQuery(t *testing.T) {
@@ -23,7 +21,7 @@ func TestQuery(t *testing.T) {
 		t.Fatal("not found")
 		return
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.Latest(false))
+	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
 }
 
 func TestPackageModule(t *testing.T) {
@@ -112,7 +110,7 @@ func TestModule(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.mod.Path, func(t *testing.T) {
 			t.Run("Latest", func(t *testing.T) {
-				latest := tt.mod.Latest(false)
+				latest := tt.mod.MaxVersion(false)
 				if latest != tt.latest {
 					t.Fatalf("wrong latest version, want %q, got %q", tt.latest, latest)
 				}
@@ -126,95 +124,6 @@ func TestModule(t *testing.T) {
 					t.Fatalf("wrong next path, want %q, got %q", tt.nextpath, nextpath)
 				}
 			})
-		})
-	}
-}
-
-func TestPackage(t *testing.T) {
-	tests := []struct {
-		path    string
-		pkg     *packages.Package
-		version string
-		pkgpath string
-	}{
-		{
-			path: "gotest.tools",
-			pkg: &packages.Package{
-				PkgDir:    "",
-				ModPrefix: "gotest.tools",
-			},
-			version: "v3.0.0",
-			pkgpath: "gotest.tools/v3",
-		},
-		{
-			path: "gotest.tools/v3",
-			pkg: &packages.Package{
-				PkgDir:    "",
-				ModPrefix: "gotest.tools",
-			},
-			version: "v2.0.1",
-			pkgpath: "gotest.tools/v2",
-		},
-		{
-			path: "gotest.tools/v3/assert/opt",
-			pkg: &packages.Package{
-				PkgDir:    "assert/opt",
-				ModPrefix: "gotest.tools",
-			},
-			version: "v1.0.0",
-			pkgpath: "gotest.tools/assert/opt",
-		},
-		{
-			path: "github.com/go-redis/redis/internal/proto",
-			pkg: &packages.Package{
-				PkgDir:    "internal/proto",
-				ModPrefix: "github.com/go-redis/redis",
-			},
-			version: "v8.0.0",
-			pkgpath: "github.com/go-redis/redis/v8/internal/proto",
-		},
-		{
-			path: "github.com/go-redis/redis/internal/proto",
-			pkg: &packages.Package{
-				PkgDir:    "internal/proto",
-				ModPrefix: "github.com/go-redis/redis",
-			},
-			version: "v6.0.1+incompatible",
-			pkgpath: "github.com/go-redis/redis/internal/proto",
-		},
-		{
-			path: "gopkg.in/yaml.v1",
-			pkg: &packages.Package{
-				ModPrefix: "gopkg.in/yaml",
-			},
-			version: "v2.0.0",
-			pkgpath: "gopkg.in/yaml.v2",
-		},
-		{
-			path: "gopkg.in/src-d/go-git.v4/plumbing",
-			pkg: &packages.Package{
-				PkgDir:    "plumbing",
-				ModPrefix: "gopkg.in/src-d/go-git",
-			},
-			version: "v3.3.1",
-			pkgpath: "gopkg.in/src-d/go-git.v3/plumbing",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.path, func(t *testing.T) {
-			t.Parallel()
-			pkg, err := Package(tt.path, false, true)
-			if err != nil {
-				t.Fatal(err)
-			}
-			pkg.Version = tt.version
-			if pkg.ModPrefix != tt.pkg.ModPrefix {
-				t.Errorf("wrong ModPrefix: got %q, want %q", pkg.ModPrefix, tt.pkg.ModPrefix)
-			}
-			if pkgpath := packages.JoinPath(pkg.ModPrefix, pkg.Version, pkg.PkgDir); pkgpath != tt.pkgpath {
-				t.Errorf("wrong package path: got %q, want %q", pkgpath, tt.pkgpath)
-			}
 		})
 	}
 }
