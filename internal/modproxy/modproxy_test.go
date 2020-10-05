@@ -98,6 +98,16 @@ func TestModule(t *testing.T) {
 			latest:   "v0.3.0",
 			nextpath: "",
 		},
+		{
+			mod: &Module{
+				Path: "gopkg.in/yaml.v2",
+				Versions: []string{
+					"v2.2.8",
+				},
+			},
+			latest:   "v2.2.8",
+			nextpath: "gopkg.in/yaml.v3",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.mod.Path, func(t *testing.T) {

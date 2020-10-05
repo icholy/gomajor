@@ -60,7 +60,7 @@ func (m *Module) NextMajorPath() (string, bool) {
 		return "", false
 	}
 	major++
-	return fmt.Sprintf("%s/v%d", prefix, major), true
+	return packages.JoinPathMajor(prefix, fmt.Sprintf("v%d", major)), true
 }
 
 // Query the module proxy for all versions of a module.
