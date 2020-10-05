@@ -43,12 +43,42 @@ func Direct(dir string) ([]*Package, error) {
 	return direct, nil
 }
 
+// ModPrefix returns the module path with no SIV
+func ModPrefix(modpath string) string {
+	prefix, _, ok := module.SplitPathVersion(modpath)
+	if !ok {
+		prefix = modpath
+	}
+	return prefix
+}
+
 func (pkg Package) ModPath() string {
 	return JoinPathMajor(pkg.ModPrefix, pkg.Version)
 }
 
 func (pkg Package) Path() string {
 	return path.Join(pkg.ModPath(), pkg.PkgDir)
+}
+
+func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
+	if !strings.HasPrefix(pkgpath, modprefix) {
+		return "", "", false
+	}
+	modpathlen := len(modprefix)
+	if strings.HasPrefix(pkgpath[modpathlen:], "/") {
+		modpathlen++
+	}
+	if idx := strings.Index(pkgpath[modpathlen:], "/"); idx >= 0 {
+		modpathlen += idx
+	} else {
+		modpathlen = len(pkgpath)
+	}
+	modpath = modprefix
+	if _, major, ok := module.SplitPathVersion(pkgpath[:modpathlen]); ok {
+		modpath = JoinPathMajor(modprefix, major)
+	}
+	pkgdir = strings.TrimPrefix(pkgpath[len(modpath):], "/")
+	return modpath, pkgdir, true
 }
 
 func (pkg Package) FindModPath(pkgpath string) (string, bool) {
