@@ -7,10 +7,11 @@ import (
 	"os"
 	"os/exec"
 
+	"golang.org/x/mod/semver"
+
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
 	"github.com/icholy/gomajor/internal/packages"
-	"golang.org/x/mod/semver"
 )
 
 var help = `
@@ -105,11 +106,11 @@ func get(args []string) error {
 	if err != nil {
 		return err
 	}
-	version := target
+	version := mod.MaxVersion(pre)
 	// figure out what version to get
 	switch target {
 	case "":
-		target = mod.MaxVersion(pre)
+		target = version
 	case "latest":
 		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
