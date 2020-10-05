@@ -101,7 +101,7 @@ func get(args []string) error {
 	}
 	// figure out the correct import path
 	pkgpath, version := packages.SplitSpec(fset.Arg(0))
-	pkg, err := packages.Load(pkgpath, pre, cached)
+	pkg, err := modproxy.LoadPackage(pkgpath, pre, cached)
 	if err != nil {
 		return err
 	}

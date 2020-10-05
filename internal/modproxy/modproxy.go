@@ -10,6 +10,8 @@ import (
 
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+
+	"github.com/icholy/gomajor/internal/packages"
 )
 
 // Module contains the module path and versions
@@ -146,4 +148,23 @@ func ForPackage(pkgpath string, cached bool) (*Module, error) {
 		prefix = strings.TrimSuffix(remaining, "/")
 	}
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
+}
+
+func LoadPackage(pkgpath string, pre bool, cache bool) (*packages.Package, error) {
+	mod, err := ForPackage(pkgpath, cache)
+	if err != nil {
+		return nil, err
+	}
+	// remove the existing version if there is one
+	modprefix := mod.Path
+	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
+		modprefix = prefix
+	}
+	pkgdir := strings.TrimPrefix(pkgpath, mod.Path)
+	pkgdir = strings.TrimPrefix(pkgdir, "/")
+	return &packages.Package{
+		Version:   mod.Latest(pre),
+		PkgDir:    pkgdir,
+		ModPrefix: modprefix,
+	}, nil
 }

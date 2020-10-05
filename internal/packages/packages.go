@@ -7,33 +7,12 @@ import (
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 	"golang.org/x/tools/go/packages"
-
-	"github.com/icholy/gomajor/internal/modproxy"
 )
 
 type Package struct {
 	Version   string
 	PkgDir    string
 	ModPrefix string
-}
-
-func Load(pkgpath string, pre bool, cache bool) (*Package, error) {
-	mod, err := modproxy.ForPackage(pkgpath, cache)
-	if err != nil {
-		return nil, err
-	}
-	// remove the existing version if there is one
-	modprefix := mod.Path
-	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
-		modprefix = prefix
-	}
-	pkgdir := strings.TrimPrefix(pkgpath, mod.Path)
-	pkgdir = strings.TrimPrefix(pkgdir, "/")
-	return &Package{
-		Version:   mod.Latest(pre),
-		PkgDir:    pkgdir,
-		ModPrefix: modprefix,
-	}, nil
 }
 
 func Direct(dir string) ([]*Package, error) {
