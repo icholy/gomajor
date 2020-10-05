@@ -65,11 +65,11 @@ func list(args []string) error {
 	}
 	seen := map[string]bool{}
 	for _, dep := range direct {
-		prefix := packages.ModPrefix(dep.Path)
-		if seen[prefix] {
+		modprefix := packages.ModPrefix(dep.Path)
+		if seen[modprefix] {
 			continue
 		}
-		seen[prefix] = true
+		seen[modprefix] = true
 		mod, err := modproxy.Latest(dep.Path, cached)
 		if err != nil {
 			fmt.Printf("%s: failed: %v\n", mod.Path, err)
