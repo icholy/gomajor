@@ -169,7 +169,7 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 }
 
-// BestMatch will return the highest version compatible with the provided version
+// BestMatch will return the highest version that matches the query version
 func (m *Module) BestMatch(query string) string {
 	dots := strings.Count(query, ".")
 	if dots == 2 {
