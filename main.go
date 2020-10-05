@@ -75,7 +75,7 @@ func list(args []string) error {
 			fmt.Printf("%s: failed: %v\n", mod.Path, err)
 			continue
 		}
-		v := mod.MaxVersion(pre)
+		v := mod.MaxVersion("", pre)
 		if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
 			continue
 		}
@@ -119,26 +119,26 @@ func get(args []string) error {
 	var version string
 	switch target {
 	case "":
-		version = mod.MaxVersion(pre)
+		version = mod.MaxVersion("", pre)
 	case "latest":
 		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
 			return err
 		}
-		version = latest.MaxVersion(pre)
+		version = latest.MaxVersion("", pre)
 		target = version
 	case "master", "default":
 		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
 			return err
 		}
-		version = latest.MaxVersion(pre)
+		version = latest.MaxVersion("", pre)
 	default:
 		if !semver.IsValid(target) {
 			return fmt.Errorf("invalid version: %s", target)
 		}
 		// best effort to detect +incompatible versions
-		if v := mod.BestMatch(target); v != "" {
+		if v := mod.MaxVersion(target, pre); v != "" {
 			version = v
 		} else {
 			version = target

@@ -24,11 +24,12 @@ type Module struct {
 
 // MaxVersion returns the latest version.
 // If there are no versions, the empty string is returned.
+// Prefix can be used to filter the versions based on a prefix.
 // If pre is false, non-v0 pre-release versions will are excluded.
-func (m *Module) MaxVersion(pre bool) string {
+func (m *Module) MaxVersion(prefix string, pre bool) string {
 	var max string
 	for _, v := range m.Versions {
-		if !semver.IsValid(v) {
+		if !semver.IsValid(v) || !strings.HasPrefix(v, prefix) {
 			continue
 		}
 		if !pre && semver.Major(v) != "v0" && semver.Prerelease(v) != "" {
@@ -56,7 +57,7 @@ func NextMajor(version string) (string, error) {
 
 // NextMajorPath returns the module path of the next major version
 func (m *Module) NextMajorPath() (string, bool) {
-	latest := m.MaxVersion(true)
+	latest := m.MaxVersion("", true)
 	if latest == "" {
 		return "", false
 	}
@@ -164,32 +165,4 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 		prefix = strings.TrimSuffix(remaining, "/")
 	}
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
-}
-
-// BestMatch will return the highest version that matches the query version
-func (m *Module) BestMatch(query string) string {
-	dots := strings.Count(query, ".")
-	if dots == 2 {
-		// if it's a fully specified version, we expect an exact match
-		for _, v := range m.Versions {
-			if semver.Compare(v, query) == 0 {
-				return v
-			}
-		}
-		return ""
-	}
-	for dots < 2 {
-		query += ".999999999999999"
-		dots++
-	}
-	var max string
-	for _, v := range m.Versions {
-		if semver.Compare(v, query) > 0 {
-			continue
-		}
-		if semver.Compare(v, max) > 0 {
-			max = v
-		}
-	}
-	return max
 }

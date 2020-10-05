@@ -9,7 +9,7 @@ func TestLatest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
+	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion("", false))
 }
 
 func TestQuery(t *testing.T) {
@@ -21,7 +21,7 @@ func TestQuery(t *testing.T) {
 		t.Fatal("not found")
 		return
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
+	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion("", false))
 }
 
 func TestQueryPackage(t *testing.T) {
@@ -57,17 +57,10 @@ func TestQueryPackage(t *testing.T) {
 
 func TestModule(t *testing.T) {
 	tests := []struct {
-		mod *Module
-
-		// for NextPath
+		mod      *Module
 		nextpath string
-
-		// for Latest
-		latest string
-
-		// for BestMatch
-		query string
-		best  string
+		prefix   string
+		max      string
 	}{
 		{
 			mod: &Module{
@@ -89,10 +82,8 @@ func TestModule(t *testing.T) {
 					"v6.8.2+incompatible",
 				},
 			},
-			latest:   "v6.14.1+incompatible",
+			max:      "v6.14.1+incompatible",
 			nextpath: "github.com/go-redis/redis/v7",
-			query:    "v6.7",
-			best:     "v6.2.3+incompatible",
 		},
 		{
 			mod: &Module{
@@ -103,10 +94,8 @@ func TestModule(t *testing.T) {
 					"v0.2.0",
 				},
 			},
-			latest:   "v0.3.0",
+			max:      "v0.3.0",
 			nextpath: "",
-			query:    "v0",
-			best:     "v0.3.0",
 		},
 		{
 			mod: &Module{
@@ -115,18 +104,16 @@ func TestModule(t *testing.T) {
 					"v2.2.8",
 				},
 			},
-			latest:   "v2.2.8",
+			max:      "v2.2.8",
 			nextpath: "gopkg.in/yaml.v3",
-			query:    "v1",
-			best:     "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.mod.Path, func(t *testing.T) {
-			t.Run("Latest", func(t *testing.T) {
-				latest := tt.mod.MaxVersion(false)
-				if latest != tt.latest {
-					t.Fatalf("wrong latest version, want %q, got %q", tt.latest, latest)
+			t.Run("MaxVersion", func(t *testing.T) {
+				max := tt.mod.MaxVersion(tt.prefix, false)
+				if max != tt.max {
+					t.Fatalf("wrong max version, want %q, got %q", tt.max, max)
 				}
 			})
 			t.Run("NextMajorPath", func(t *testing.T) {
@@ -136,12 +123,6 @@ func TestModule(t *testing.T) {
 				}
 				if nextpath != tt.nextpath {
 					t.Fatalf("wrong next path: want %q, got %q", tt.nextpath, nextpath)
-				}
-			})
-			t.Run("BestMatch", func(t *testing.T) {
-				best := tt.mod.BestMatch(tt.query)
-				if best != tt.best {
-					t.Fatalf("wrong best: want %q, got %q", tt.best, best)
 				}
 			})
 		})
