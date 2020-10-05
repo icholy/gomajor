@@ -66,8 +66,10 @@ func (m *Module) NextMajorPath() (string, bool) {
 // cached sets the Disable-Module-Fetch: true header
 func Query(modpath string, cached bool) (*Module, bool, error) {
 	escaped, err := module.EscapePath(modpath)
+	if err != nil {
+		return nil, false, err
+	}
 	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", escaped)
-	fmt.Println("Query", url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, false, err
