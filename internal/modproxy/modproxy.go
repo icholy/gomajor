@@ -2,13 +2,18 @@ package modproxy
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+
+	"github.com/icholy/gomajor/internal/packages"
 )
 
 // Module contains the module path and versions
@@ -17,12 +22,16 @@ type Module struct {
 	Versions []string
 }
 
-// Latest returns the latest version.
-// If there are no vesrions, the empty string is returned.
-func (m *Module) Latest() string {
+// MaxVersion returns the latest version.
+// If there are no versions, the empty string is returned.
+// If pre is false, non-v0 pre-release versions will are excluded.
+func (m *Module) MaxVersion(pre bool) string {
 	var max string
 	for _, v := range m.Versions {
 		if !semver.IsValid(v) {
+			continue
+		}
+		if !pre && semver.Major(v) != "v0" && semver.Prerelease(v) != "" {
 			continue
 		}
 		if max == "" {
@@ -35,9 +44,19 @@ func (m *Module) Latest() string {
 	return max
 }
 
+// NextMajor returns the next major version after the provided version
+func NextMajor(version string) (string, error) {
+	major, err := strconv.Atoi(strings.TrimPrefix(semver.Major(version), "v"))
+	if err != nil {
+		return "", err
+	}
+	major++
+	return fmt.Sprintf("v%d", major), nil
+}
+
 // NextMajorPath returns the module path of the next major version
 func (m *Module) NextMajorPath() (string, bool) {
-	latest := m.Latest()
+	latest := m.MaxVersion(true)
 	if latest == "" {
 		return "", false
 	}
@@ -45,29 +64,47 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if !ok {
 		return "", false
 	}
-	major, err := strconv.Atoi(strings.TrimPrefix(semver.Major(latest), "v"))
+	if semver.Major(latest) == "v0" {
+		return "", false
+	}
+	next, err := NextMajor(latest)
 	if err != nil {
 		return "", false
 	}
-	major++
-	return fmt.Sprintf("%s/v%d", prefix, major), true
+	return packages.JoinPath(prefix, next, ""), true
 }
 
 // Query the module proxy for all versions of a module.
 // If the module does not exist, the second return parameter will be false
-func Query(modpath string) (*Module, bool, error) {
-	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", modpath)
-	res, err := http.Get(url)
+// cached sets the Disable-Module-Fetch: true header
+func Query(modpath string, cached bool) (*Module, bool, error) {
+	escaped, err := module.EscapePath(modpath)
+	if err != nil {
+		return nil, false, err
+	}
+	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", escaped)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, false, err
+	}
+	if cached {
+		req.Header.Set("Disable-Module-Fetch", "true")
+	}
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, false, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		if res.StatusCode == http.StatusGone {
-			// version does not exist
+		body, _ := ioutil.ReadAll(res.Body)
+		if res.StatusCode == http.StatusGone && bytes.HasPrefix(body, []byte("not found:")) {
 			return nil, false, nil
 		}
-		return nil, false, fmt.Errorf("proxy request failed: %s", res.Status)
+		msg := string(body)
+		if msg == "" {
+			msg = res.Status
+		}
+		return nil, false, fmt.Errorf("proxy: %s", msg)
 	}
 	var mod Module
 	mod.Path = modpath
@@ -82,8 +119,9 @@ func Query(modpath string) (*Module, bool, error) {
 }
 
 // Latest finds the latest major version of a module
-func Latest(modpath string) (*Module, error) {
-	latest, ok, err := Query(modpath)
+// cached sets the Disable-Module-Fetch: true header
+func Latest(modpath string, cached bool) (*Module, error) {
+	latest, ok, err := Query(modpath, cached)
 	if err != nil {
 		return nil, err
 	}
@@ -93,10 +131,9 @@ func Latest(modpath string) (*Module, error) {
 	for i := 0; i < 100; i++ {
 		nextpath, ok := latest.NextMajorPath()
 		if !ok {
-			return nil, fmt.Errorf("bad module path: %s", latest.Path)
+			return latest, nil
 		}
-		fmt.Println("Query", nextpath)
-		next, ok, err := Query(nextpath)
+		next, ok, err := Query(nextpath, cached)
 		if err != nil {
 			return nil, err
 		}
@@ -106,4 +143,56 @@ func Latest(modpath string) (*Module, error) {
 		latest = next
 	}
 	return nil, fmt.Errorf("request limit exceeded")
+}
+
+// QueryPackage tries to find the module path for the provided package path
+// it does so by repeatedly chopping off the last path element and trying to
+// use it as a path.
+func QueryPackage(pkgpath string, cached bool) (*Module, error) {
+	prefix := pkgpath
+	for prefix != "" {
+		if module.CheckPath(prefix) == nil {
+			mod, ok, err := Query(prefix, cached)
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				return mod, nil
+			}
+		}
+		remaining, last := path.Split(prefix)
+		if last == "" {
+			break
+		}
+		prefix = strings.TrimSuffix(remaining, "/")
+	}
+	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
+}
+
+// BestMatch will return the highest version compatible with the provided version
+func (m *Module) BestMatch(query string) string {
+	dots := strings.Count(query, ".")
+	if dots == 2 {
+		// if it's a fully specified version, we expect an exact match
+		for _, v := range m.Versions {
+			if semver.Compare(v, query) == 0 {
+				return v
+			}
+		}
+		return ""
+	}
+	for dots < 2 {
+		query += ".999999999999999"
+		dots++
+	}
+	var max string
+	for _, v := range m.Versions {
+		if semver.Compare(v, query) > 0 {
+			continue
+		}
+		if semver.Compare(v, max) > 0 {
+			max = v
+		}
+	}
+	return max
 }

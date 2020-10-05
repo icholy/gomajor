@@ -8,10 +8,12 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/icholy/gomajor/internal/importpaths"
-	"github.com/icholy/gomajor/internal/packages"
-	"github.com/icholy/gomajor/internal/pkgsite"
+	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+
+	"github.com/icholy/gomajor/internal/importpaths"
+	"github.com/icholy/gomajor/internal/modproxy"
+	"github.com/icholy/gomajor/internal/packages"
 )
 
 var help = `
@@ -52,90 +54,106 @@ func main() {
 
 func list(args []string) error {
 	var dir string
-	var pre bool
+	var pre, cached, major bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.Parse(args)
 	direct, err := packages.Direct(dir)
 	if err != nil {
 		return err
 	}
-	pkgs := map[string]*packages.Package{}
-	for _, pkg := range direct {
-		prev, ok := pkgs[pkg.ModPath()]
-		if !ok || prev.PkgDir == "" {
-			pkgs[pkg.ModPath()] = pkg
+	seen := map[string]bool{}
+	for _, dep := range direct {
+		prefix := packages.ModPrefix(dep.Path)
+		if seen[prefix] {
 			continue
 		}
-		// We're looking for the shallowest subpackage directory. The assumption is that
-		// it will be less likely to change between versions.
-		if len(strings.Split(pkg.PkgDir, "/")) < len(strings.Split(prev.PkgDir, "/")) {
-			pkgs[pkg.ModPath()] = pkg
-		}
-	}
-	for _, pkg := range pkgs {
-		v, err := pkgsite.Latest(pkg.ModPath(), pre)
+		seen[prefix] = true
+		mod, err := modproxy.Latest(dep.Path, cached)
 		if err != nil {
-			// If the module root is not a package, no versions will be returned.
-			// We,'re forced fallback to trying to get newer module versions of the full package path.
-			// If the newer major version doesn't contain the package subdirectory, no versions will be returned.
-			v, err = pkgsite.Latest(pkg.Path(), pre)
-			if err != nil {
-				fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
-				continue
-			}
+			fmt.Printf("%s: failed: %v\n", mod.Path, err)
+			continue
 		}
-		if semver.Compare(v, pkg.Version) > 0 {
-			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(), pkg.Version, v)
+		v := mod.MaxVersion(pre)
+		if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
+			continue
 		}
+		if semver.Compare(v, dep.Version) <= 0 {
+			continue
+		}
+		fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
 	}
 	return nil
 }
 
 func get(args []string) error {
 	var dir string
-	var rewrite, goget, pre bool
+	var rewrite, goget, pre, cached bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.Parse(args)
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
 	}
 	// figure out the correct import path
-	pkgpath, version := packages.SplitSpec(fset.Arg(0))
-	pkg, err := packages.Load(pkgpath)
+	pkgpath, target := packages.SplitSpec(fset.Arg(0))
+	mod, err := modproxy.QueryPackage(pkgpath, cached)
 	if err != nil {
 		return err
 	}
+	// try infer the target from SIV
+	if target == "" {
+		modprefix := packages.ModPrefix(mod.Path)
+		if modpath, _, ok := packages.SplitPath(modprefix, pkgpath); ok && modpath != mod.Path {
+			if _, major, ok := module.SplitPathVersion(modpath); ok {
+				target = strings.TrimPrefix(major, "/")
+			}
+		}
+	}
 	// figure out what version to get
-	if version == "latest" {
-		version, err = pkgsite.Latest(pkg.Path(), pre)
+	var version string
+	switch target {
+	case "":
+		version = mod.MaxVersion(pre)
+	case "latest":
+		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
 			return err
 		}
-	}
-	if version == "master" {
-		version, err := pkgsite.Latest(pkg.Path(), pre)
+		version = latest.MaxVersion(pre)
+		target = version
+	case "master", "default":
+		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
 			return err
 		}
-		pkg.Version = version
-	}
-	if version != "" && version != "master" {
-		if !semver.IsValid(version) {
-			return fmt.Errorf("invalid version: %s", version)
+		version = latest.MaxVersion(pre)
+	default:
+		if !semver.IsValid(target) {
+			return fmt.Errorf("invalid version: %s", target)
 		}
-		pkg.Version = version
+		// best effort to detect +incompatible versions
+		if v := mod.BestMatch(target); v != "" {
+			version = v
+		} else {
+			version = target
+		}
 	}
+	// split up the path
+	modprefix := packages.ModPrefix(mod.Path)
+	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// go get
 	if goget {
-		spec := pkg.Path()
-		if version != "" {
-			spec += "@" + version
+		spec := packages.JoinPath(modprefix, version, pkgdir)
+		if target != "" {
+			spec += "@" + target
 		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
@@ -151,20 +169,14 @@ func get(args []string) error {
 		return nil
 	}
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
-		modpath, ok := pkg.FindModPath(path)
+		_, pkgdir0, ok := packages.SplitPath(modprefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
 		}
-		pkgdir := strings.TrimPrefix(path, modpath)
-		pkgdir = strings.TrimPrefix(pkgdir, "/")
-		if pkg.PkgDir != "" && pkg.PkgDir != pkgdir {
+		if pkgdir != "" && pkgdir != pkgdir0 {
 			return "", importpaths.ErrSkip
 		}
-		newpath := packages.Package{
-			Version:   pkg.Version,
-			PkgDir:    pkgdir,
-			ModPrefix: pkg.ModPrefix,
-		}.Path()
+		newpath := packages.JoinPath(modprefix, version, pkgdir0)
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}

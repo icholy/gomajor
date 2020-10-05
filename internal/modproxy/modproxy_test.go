@@ -5,15 +5,15 @@ import (
 )
 
 func TestLatest(t *testing.T) {
-	mod, err := Latest("github.com/go-redis/redis")
+	mod, err := Latest("github.com/go-redis/redis", true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.Latest())
+	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
 }
 
 func TestQuery(t *testing.T) {
-	mod, ok, err := Query("github.com/go-redis/redis")
+	mod, ok, err := Query("github.com/DATA-DOG/go-sqlmock", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,14 +21,53 @@ func TestQuery(t *testing.T) {
 		t.Fatal("not found")
 		return
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.Latest())
+	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
+}
+
+func TestQueryPackage(t *testing.T) {
+	tests := []struct {
+		pkgpath string
+		modpath string
+	}{
+		{
+			pkgpath: "github.com/go-redis/redis",
+			modpath: "github.com/go-redis/redis",
+		},
+		{
+			pkgpath: "github.com/google/go-cmp/cmp",
+			modpath: "github.com/google/go-cmp",
+		},
+		{
+			pkgpath: "github.com/go-git/go-git/v5/plumbing/format/commitgraph",
+			modpath: "github.com/go-git/go-git/v5",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.pkgpath, func(t *testing.T) {
+			mod, err := QueryPackage(tt.pkgpath, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if mod.Path != tt.modpath {
+				t.Fatalf("invalid modpath, want %q, got %q", tt.modpath, mod.Path)
+			}
+		})
+	}
 }
 
 func TestModule(t *testing.T) {
 	tests := []struct {
-		mod      *Module
+		mod *Module
+
+		// for NextPath
 		nextpath string
-		latest   string
+
+		// for Latest
+		latest string
+
+		// for BestMatch
+		query string
+		best  string
 	}{
 		{
 			mod: &Module{
@@ -52,23 +91,51 @@ func TestModule(t *testing.T) {
 			},
 			latest:   "v6.14.1+incompatible",
 			nextpath: "github.com/go-redis/redis/v7",
+			query:    "v6.7",
+			best:     "v6.8.2+incompatible",
+		},
+		{
+			mod: &Module{
+				Path: "golang.org/x/mod",
+				Versions: []string{
+					"v0.3.0",
+					"v0.1.0",
+					"v0.2.0",
+				},
+			},
+			latest:   "v0.3.0",
+			nextpath: "",
+			query:    "v0",
+			best:     "v0.3.1",
+		},
+		{
+			mod: &Module{
+				Path: "gopkg.in/yaml.v2",
+				Versions: []string{
+					"v2.2.8",
+				},
+			},
+			latest:   "v2.2.8",
+			nextpath: "gopkg.in/yaml.v3",
+			query:    "v1",
+			best:     "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.mod.Path, func(t *testing.T) {
 			t.Run("Latest", func(t *testing.T) {
-				latest := tt.mod.Latest()
+				latest := tt.mod.MaxVersion(false)
 				if latest != tt.latest {
-					t.Fatalf("wrong latest version, want %s, got %s", tt.latest, latest)
+					t.Fatalf("wrong latest version, want %q, got %q", tt.latest, latest)
 				}
 			})
 			t.Run("NextMajorPath", func(t *testing.T) {
 				nextpath, ok := tt.mod.NextMajorPath()
-				if !ok {
+				if !ok && tt.nextpath != "" {
 					t.Fatal("failed to get next major version")
 				}
 				if nextpath != tt.nextpath {
-					t.Fatalf("wrong next path, want %s, got %s", tt.nextpath, nextpath)
+					t.Fatalf("wrong next path, want %q, got %q", tt.nextpath, nextpath)
 				}
 			})
 		})

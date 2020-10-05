@@ -2,134 +2,139 @@ package packages
 
 import (
 	"testing"
+
+	"golang.org/x/mod/semver"
 )
 
-func TestPackage(t *testing.T) {
+func TestCompare(t *testing.T) {
+	t.Log("Compare", semver.Compare("v3+incompatible", "v3.0.2"))
+}
+
+func TestJoinPath(t *testing.T) {
 	tests := []struct {
-		path    string
-		pkg     *Package
-		version string
-		pkgpath string
+		modprefix string
+		version   string
+		pkgpath   string
+		pkgdir    string
 	}{
 		{
-			path: "gotest.tools",
-			pkg: &Package{
-				PkgDir:    "",
-				ModPrefix: "gotest.tools",
-			},
-			version: "v3.0.0",
-			pkgpath: "gotest.tools/v3",
+			modprefix: "github.com/google/go-cmp",
+			version:   "v0.1.2",
+			pkgdir:    "cmp",
+			pkgpath:   "github.com/google/go-cmp/cmp",
 		},
 		{
-			path: "gotest.tools/v3",
-			pkg: &Package{
-				PkgDir:    "",
-				ModPrefix: "gotest.tools",
-			},
-			version: "v2.0.1",
-			pkgpath: "gotest.tools/v2",
+			modprefix: "github.com/go-redis/redis",
+			version:   "v6.0.1+incompatible",
+			pkgpath:   "github.com/go-redis/redis",
 		},
 		{
-			path: "gotest.tools/v3/assert/opt",
-			pkg: &Package{
-				PkgDir:    "assert/opt",
-				ModPrefix: "gotest.tools",
-			},
-			version: "v1.0.0",
-			pkgpath: "gotest.tools/assert/opt",
+			modprefix: "github.com/go-redis/redis",
+			version:   "v8.0.1",
+			pkgdir:    "internal/proto",
+			pkgpath:   "github.com/go-redis/redis/v8/internal/proto",
 		},
 		{
-			path: "github.com/go-redis/redis/internal/proto",
-			pkg: &Package{
-				PkgDir:    "internal/proto",
-				ModPrefix: "github.com/go-redis/redis",
-			},
-			version: "v8.0.0",
-			pkgpath: "github.com/go-redis/redis/v8/internal/proto",
+			modprefix: "gopkg.in/yaml",
+			version:   "v3",
+			pkgpath:   "gopkg.in/yaml.v3",
 		},
 		{
-			path: "github.com/go-redis/redis/internal/proto",
-			pkg: &Package{
-				PkgDir:    "internal/proto",
-				ModPrefix: "github.com/go-redis/redis",
-			},
-			version: "v6.0.1+incompatible",
-			pkgpath: "github.com/go-redis/redis/internal/proto",
+			pkgdir:    "",
+			modprefix: "gotest.tools",
+			version:   "v3.0.0",
+			pkgpath:   "gotest.tools/v3",
 		},
 		{
-			path: "gopkg.in/yaml.v1",
-			pkg: &Package{
-				ModPrefix: "gopkg.in/yaml",
-			},
-			version: "v2.0.0",
-			pkgpath: "gopkg.in/yaml.v2",
+			pkgdir:    "",
+			modprefix: "gotest.tools",
+			version:   "v2.0.1",
+			pkgpath:   "gotest.tools/v2",
 		},
 		{
-			path: "gopkg.in/src-d/go-git.v4/plumbing",
-			pkg: &Package{
-				PkgDir:    "plumbing",
-				ModPrefix: "gopkg.in/src-d/go-git",
-			},
-			version: "v3.3.1",
-			pkgpath: "gopkg.in/src-d/go-git.v3/plumbing",
+			pkgdir:    "assert/opt",
+			modprefix: "gotest.tools",
+			version:   "v1.0.0",
+			pkgpath:   "gotest.tools/assert/opt",
+		},
+		{
+			pkgdir:    "internal/proto",
+			modprefix: "github.com/go-redis/redis",
+			version:   "v8.0.0",
+			pkgpath:   "github.com/go-redis/redis/v8/internal/proto",
+		},
+		{
+			pkgdir:    "internal/proto",
+			modprefix: "github.com/go-redis/redis",
+			version:   "v6.0.1+incompatible",
+			pkgpath:   "github.com/go-redis/redis/internal/proto",
+		},
+		{
+			modprefix: "gopkg.in/yaml",
+			version:   "v2.0.0",
+			pkgpath:   "gopkg.in/yaml.v2",
+		},
+		{
+			pkgdir:    "plumbing",
+			modprefix: "gopkg.in/src-d/go-git",
+			version:   "v3.3.1",
+			pkgpath:   "gopkg.in/src-d/go-git.v3/plumbing",
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.path, func(t *testing.T) {
-			t.Parallel()
-			pkg, err := Load(tt.path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			pkg.Version = tt.version
-			if pkg.ModPrefix != tt.pkg.ModPrefix {
-				t.Errorf("wrong ModPrefix: got %q, want %q", pkg.ModPrefix, tt.pkg.ModPrefix)
-			}
-			if pkgpath := pkg.Path(); pkgpath != tt.pkgpath {
-				t.Errorf("wrong package path: got %q, want %q", pkgpath, tt.pkgpath)
+		t.Run(tt.pkgpath, func(t *testing.T) {
+			pkgpath := JoinPath(tt.modprefix, tt.version, tt.pkgdir)
+			if pkgpath != tt.pkgpath {
+				t.Fatalf("bad pkgpath: want %q, got %q", tt.pkgpath, pkgpath)
 			}
 		})
 	}
 }
 
-func TestPackage_FindModPath(t *testing.T) {
+func TestSplitPath(t *testing.T) {
 	tests := []struct {
-		pkg     *Package
-		path    string
-		modpath string
+		modprefix string
+		pkgpath   string
+		pkgdir    string
+		modpath   string
+		bad       bool
 	}{
 		{
-			pkg: &Package{
-				ModPrefix: "github.com/go-redis/redis",
-			},
-			path:    "github.com/go-redis/redis/internal/proto",
-			modpath: "github.com/go-redis/redis",
+			pkgpath:   "github.com/go-redis/redis/internal/proto",
+			modprefix: "github.com/go-redis/redis",
+			modpath:   "github.com/go-redis/redis",
+			pkgdir:    "internal/proto",
 		},
 		{
-			pkg: &Package{
-				ModPrefix: "github.com/go-redis/redis",
-			},
-			path:    "github.com/go-redis/redis/v8",
-			modpath: "github.com/go-redis/redis/v8",
+			pkgpath:   "gopkg.in/src-d/go-git.v4/plumbing",
+			modprefix: "gopkg.in/src-d/go-git",
+			modpath:   "gopkg.in/src-d/go-git.v4",
+			pkgdir:    "plumbing",
 		},
 		{
-			pkg: &Package{
-				PkgDir:    "plumbing",
-				ModPrefix: "gopkg.in/src-d/go-git",
-			},
-			path:    "gopkg.in/src-d/go-git.v4/plumbing",
-			modpath: "gopkg.in/src-d/go-git.v4",
+			pkgpath:   "github.com/go-redis/redis/v8",
+			modprefix: "github.com/go-redis/redis",
+			modpath:   "github.com/go-redis/redis/v8",
+			pkgdir:    "",
+		},
+		{
+			pkgpath:   "gopkg.in/src-d/go-git.v4/plumbing",
+			modprefix: "gopkg.in/src-d/go-git",
+			pkgdir:    "plumbing",
+			modpath:   "gopkg.in/src-d/go-git.v4",
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
-			modpath, ok := tt.pkg.FindModPath(tt.path)
-			if !ok {
-				t.Fatal("failed to find modpath")
+		t.Run(tt.pkgpath, func(t *testing.T) {
+			modpath, pkgdir, ok := SplitPath(tt.modprefix, tt.pkgpath)
+			if ok == tt.bad {
+				t.Fatalf("bad ok: want %t, got %t", !tt.bad, ok)
 			}
 			if modpath != tt.modpath {
-				t.Errorf("wrong modpath: got %q, want %q", modpath, tt.modpath)
+				t.Errorf("bad modpath: want %q, got %q", tt.modpath, modpath)
+			}
+			if pkgdir != tt.pkgdir {
+				t.Errorf("bad pkgdir: want %q, got %q", tt.pkgdir, pkgdir)
 			}
 		})
 	}

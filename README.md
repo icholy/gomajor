@@ -40,11 +40,5 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 
 ### Warning:
 
-* `@v` suffix doesn't work for `+incompatible` versions (just use `go get`).
+* By default, only cached content will be fetched from the module proxy (See `-cached` flag).
 * If you have multiple major versions imported, **ALL** of them will be rewritten.
-* `list` can miss newer versions if the subpackage structure changes.
-* `@latest` and `@master` scrapes pkg.go.dev and will stop working at some point.
-    * https://proxy.golang.org/ only allows listing minor versions.
-    * https://github.com/golang/go/issues/36785
-    * https://github.com/golang/go/issues/40323
-    * https://github.com/golang/go/issues/40323
