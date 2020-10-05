@@ -128,7 +128,11 @@ func get(args []string) error {
 		if !semver.IsValid(version) {
 			return fmt.Errorf("invalid version: %s", version)
 		}
-		version = target
+		if v := mod.BestMatch(target); v != "" {
+			version = v
+		} else {
+			version = target
+		}
 	}
 	// split up the path
 	modprefix := packages.ModPrefix(mod.Path)

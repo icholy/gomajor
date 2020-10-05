@@ -41,5 +41,4 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 ### Warning:
 
 * By default, only cached content will be fetched from the module proxy (See `-cached` flag).
-* `@v` suffix doesn't work for `+incompatible` versions (just use `go get`).
 * If you have multiple major versions imported, **ALL** of them will be rewritten.
