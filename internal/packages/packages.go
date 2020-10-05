@@ -20,8 +20,8 @@ type Package struct {
 	ModPrefix string
 }
 
-func Load(pkgpath string) (*Package, error) {
-	mod, err := modproxy.ForPackage(pkgpath, false)
+func Load(pkgpath string, cache bool) (*Package, error) {
+	mod, err := modproxy.ForPackage(pkgpath, cache)
 	if err != nil {
 		return nil, err
 	}

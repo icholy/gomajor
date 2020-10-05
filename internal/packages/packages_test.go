@@ -78,7 +78,7 @@ func TestPackage(t *testing.T) {
 		tt := tt
 		t.Run(tt.path, func(t *testing.T) {
 			t.Parallel()
-			pkg, err := Load(tt.path)
+			pkg, err := Load(tt.path, true)
 			if err != nil {
 				t.Fatal(err)
 			}
