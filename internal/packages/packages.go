@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,6 +10,8 @@ import (
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/icholy/gomajor/internal/modproxy"
 )
 
 type Package struct {
@@ -20,41 +21,19 @@ type Package struct {
 }
 
 func Load(pkgpath string) (*Package, error) {
-	// create temp module directory
-	dir, err := TempModDir()
+	mod, err := modproxy.ForPackage(pkgpath, false)
 	if err != nil {
 		return nil, err
-	}
-	defer os.RemoveAll(dir)
-	// find the module root
-	cfg := &packages.Config{
-		Dir:  dir,
-		Mode: packages.NeedName | packages.NeedModule,
-	}
-	pkgs, err := packages.Load(cfg, pkgpath)
-	if err != nil {
-		return nil, err
-	}
-	if len(pkgs) == 0 {
-		return nil, fmt.Errorf("failed to find module: %s", pkgpath)
-	}
-	pkg := pkgs[0]
-	if len(pkg.Errors) > 0 {
-		return nil, pkg.Errors[0]
-	}
-	version := pkg.Module.Version
-	if replace := pkg.Module.Replace; replace != nil {
-		version = replace.Version
 	}
 	// remove the existing version if there is one
-	modprefix := pkg.Module.Path
+	modprefix := mod.Path
 	if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
 		modprefix = prefix
 	}
-	pkgdir := strings.TrimPrefix(pkg.PkgPath, pkg.Module.Path)
+	pkgdir := strings.TrimPrefix(pkgpath, mod.Path)
 	pkgdir = strings.TrimPrefix(pkgdir, "/")
 	return &Package{
-		Version:   version,
+		Version:   mod.Latest(false),
 		PkgDir:    pkgdir,
 		ModPrefix: modprefix,
 	}, nil
