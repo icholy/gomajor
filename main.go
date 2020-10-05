@@ -52,12 +52,12 @@ func main() {
 
 func list(args []string) error {
 	var dir string
-	var pre bool
-	var cached bool
+	var pre, cached, major bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.Parse(args)
 	direct, err := packages.Direct(dir)
 	if err != nil {
@@ -74,9 +74,14 @@ func list(args []string) error {
 			fmt.Printf("%s: failed: %v\n", pkg.ModPath(), err)
 			continue
 		}
-		if v := mod.Latest(pre); semver.Compare(v, pkg.Version) > 0 {
-			fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(), pkg.Version, v)
+		v := mod.Latest(pre)
+		if major && semver.Compare(semver.Major(v), semver.Major(pkg.Version)) <= 0 {
+			continue
 		}
+		if semver.Compare(v, pkg.Version) <= 0 {
+			continue
+		}
+		fmt.Printf("%s: %s [latest %v]\n", pkg.ModPath(), pkg.Version, v)
 	}
 	return nil
 }
