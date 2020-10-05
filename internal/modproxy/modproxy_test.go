@@ -92,7 +92,7 @@ func TestModule(t *testing.T) {
 			latest:   "v6.14.1+incompatible",
 			nextpath: "github.com/go-redis/redis/v7",
 			query:    "v6.7",
-			best:     "v6.8.2+incompatible",
+			best:     "v6.2.3+incompatible",
 		},
 		{
 			mod: &Module{
@@ -106,7 +106,7 @@ func TestModule(t *testing.T) {
 			latest:   "v0.3.0",
 			nextpath: "",
 			query:    "v0",
-			best:     "v0.3.1",
+			best:     "v0.3.0",
 		},
 		{
 			mod: &Module{
@@ -135,7 +135,13 @@ func TestModule(t *testing.T) {
 					t.Fatal("failed to get next major version")
 				}
 				if nextpath != tt.nextpath {
-					t.Fatalf("wrong next path, want %q, got %q", tt.nextpath, nextpath)
+					t.Fatalf("wrong next path: want %q, got %q", tt.nextpath, nextpath)
+				}
+			})
+			t.Run("BestMatch", func(t *testing.T) {
+				best := tt.mod.BestMatch(tt.query)
+				if best != tt.best {
+					t.Fatalf("wrong best: want %q, got %q", tt.best, best)
 				}
 			})
 		})
