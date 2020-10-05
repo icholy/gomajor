@@ -30,13 +30,9 @@ func Direct(dir string) ([]*Package, error) {
 	for _, pkg := range pkgs {
 		if mod := pkg.Module; mod != nil && !mod.Indirect && mod.Replace == nil && !mod.Main && !seen[mod.Path] {
 			seen[mod.Path] = true
-			modprefix := pkg.Module.Path
-			if prefix, _, ok := module.SplitPathVersion(modprefix); ok {
-				modprefix = prefix
-			}
 			direct = append(direct, &Package{
 				Version:   mod.Version,
-				ModPrefix: modprefix,
+				ModPrefix: ModPrefix(pkg.Module.Path),
 			})
 		}
 	}
@@ -53,7 +49,7 @@ func ModPrefix(modpath string) string {
 }
 
 func (pkg Package) ModPath() string {
-	return JoinPathMajor(pkg.ModPrefix, pkg.Version)
+	return JoinPath(pkg.ModPrefix, pkg.Version, "")
 }
 
 func (pkg Package) Path() string {
@@ -75,7 +71,7 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 	}
 	modpath = modprefix
 	if _, major, ok := module.SplitPathVersion(pkgpath[:modpathlen]); ok {
-		modpath = JoinPathMajor(modprefix, major)
+		modpath = JoinPath(modprefix, major, "")
 	}
 	pkgdir = strings.TrimPrefix(pkgpath[len(modpath):], "/")
 	return modpath, pkgdir, true
@@ -92,18 +88,22 @@ func SplitSpec(spec string) (path, version string) {
 	return
 }
 
-func JoinPathMajor(path, version string) string {
+func JoinPath(modprefix, version, pkgdir string) string {
 	version = strings.TrimPrefix(version, ".")
 	version = strings.TrimPrefix(version, "/")
 	major := semver.Major(version)
-	if strings.HasPrefix(path, "gopkg.in") {
-		return path + "." + major
+	pkgpath := modprefix
+	switch {
+	case strings.HasPrefix(pkgpath, "gopkg.in"):
+		pkgpath += "." + major
+	case major != "" && major != "v0" && major != "v1" && !strings.Contains(version, "+incompatible"):
+		if !strings.HasSuffix(pkgpath, "/") {
+			pkgpath += "/"
+		}
+		pkgpath += major
 	}
-	if major == "" || major == "v0" || major == "v1" || strings.Contains(version, "+incompatible") {
-		return path
+	if pkgdir != "" {
+		pkgpath += "/" + pkgdir
 	}
-	if !strings.HasSuffix(path, "/") {
-		path += "/"
-	}
-	return path + major
+	return pkgpath
 }

@@ -71,7 +71,7 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	return packages.JoinPathMajor(prefix, next), true
+	return packages.JoinPath(prefix, next, ""), true
 }
 
 // Query the module proxy for all versions of a module.

@@ -153,7 +153,7 @@ func get(args []string) error {
 		return nil
 	}
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
-		modpath, pkgdir, ok := packages.SplitPath(pkg.ModPrefix, path)
+		_, pkgdir, ok := packages.SplitPath(pkg.ModPrefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
 		}
