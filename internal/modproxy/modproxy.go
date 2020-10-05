@@ -134,12 +134,14 @@ func Latest(modpath string, cached bool) (*Module, error) {
 func ForPackage(pkgpath string, cached bool) (*Module, error) {
 	prefix := pkgpath
 	for prefix != "" {
-		mod, ok, err := Query(prefix, cached)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			return mod, nil
+		if module.CheckPath(prefix) == nil {
+			mod, ok, err := Query(prefix, cached)
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				return mod, nil
+			}
 		}
 		remaining, last := path.Split(prefix)
 		if last == "" {
@@ -150,6 +152,7 @@ func ForPackage(pkgpath string, cached bool) (*Module, error) {
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 }
 
+// LoadPackage will query the module proxy for the provided package path
 func LoadPackage(pkgpath string, pre bool, cache bool) (*packages.Package, error) {
 	mod, err := ForPackage(pkgpath, cache)
 	if err != nil {
