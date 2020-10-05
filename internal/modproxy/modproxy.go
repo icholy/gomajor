@@ -145,10 +145,10 @@ func Latest(modpath string, cached bool) (*Module, error) {
 	return nil, fmt.Errorf("request limit exceeded")
 }
 
-// PackageModule tries to find the module path for the provided package path
+// QueryPackage tries to find the module path for the provided package path
 // it does so by repeatedly chopping off the last path element and trying to
 // use it as a path.
-func PackageModule(pkgpath string, cached bool) (*Module, error) {
+func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 	prefix := pkgpath
 	for prefix != "" {
 		if module.CheckPath(prefix) == nil {

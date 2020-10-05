@@ -24,7 +24,7 @@ func TestQuery(t *testing.T) {
 	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion(false))
 }
 
-func TestPackageModule(t *testing.T) {
+func TestQueryPackage(t *testing.T) {
 	tests := []struct {
 		pkgpath string
 		modpath string
@@ -44,7 +44,7 @@ func TestPackageModule(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.pkgpath, func(t *testing.T) {
-			mod, err := PackageModule(tt.pkgpath, true)
+			mod, err := QueryPackage(tt.pkgpath, true)
 			if err != nil {
 				t.Fatal(err)
 			}
