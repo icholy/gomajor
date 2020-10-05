@@ -100,12 +100,14 @@ func get(args []string) error {
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
 	}
-	// figure out the correct import path
+	// split the package spec into its components
 	pkgpath, target := packages.SplitSpec(fset.Arg(0))
 	mod, err := modproxy.QueryPackage(pkgpath, cached)
 	if err != nil {
 		return err
 	}
+	modprefix := packages.ModPrefix(mod.Path)
+	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// figure out what version to get
 	var version string
 	switch target {
@@ -135,9 +137,6 @@ func get(args []string) error {
 			version = target
 		}
 	}
-	// split up the path
-	modprefix := packages.ModPrefix(mod.Path)
-	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// go get
 	if goget {
 		spec := packages.JoinPath(modprefix, version, pkgdir)
