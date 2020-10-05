@@ -82,22 +82,8 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 }
 
 func (pkg Package) FindModPath(pkgpath string) (string, bool) {
-	if !strings.HasPrefix(pkgpath, pkg.ModPrefix) {
-		return "", false
-	}
-	modpathlen := len(pkg.ModPrefix)
-	if strings.HasPrefix(pkgpath[modpathlen:], "/") {
-		modpathlen++
-	}
-	if idx := strings.Index(pkgpath[modpathlen:], "/"); idx >= 0 {
-		modpathlen += idx
-	} else {
-		modpathlen = len(pkgpath)
-	}
-	if _, major, ok := module.SplitPathVersion(pkgpath[:modpathlen]); ok {
-		return JoinPathMajor(pkg.ModPrefix, major), true
-	}
-	return pkg.ModPrefix, true
+	modpath, _, ok := SplitPath(pkg.ModPrefix, pkgpath)
+	return modpath, ok
 }
 
 func SplitSpec(spec string) (path, version string) {
