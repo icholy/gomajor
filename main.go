@@ -66,7 +66,7 @@ func list(args []string) error {
 	for _, dep := range dependencies {
 		mod, err := modproxy.Latest(dep.Path, cached)
 		if err != nil {
-			fmt.Printf("%s: failed: %v\n", mod.Path, err)
+			fmt.Printf("%s: failed: %v\n", dep.Path, err)
 			continue
 		}
 		v := mod.MaxVersion("", pre)
