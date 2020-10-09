@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 
+	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 
 	"github.com/icholy/gomajor/internal/importpaths"
@@ -63,7 +64,11 @@ func list(args []string) error {
 	if err != nil {
 		return err
 	}
+	private := os.Getenv("GOPRIVATE")
 	for _, dep := range dependencies {
+		if module.MatchPrefixPatterns(private, dep.Path) {
+			continue
+		}
 		mod, err := modproxy.Latest(dep.Path, cached)
 		if err != nil {
 			fmt.Printf("%s: failed: %v\n", dep.Path, err)
