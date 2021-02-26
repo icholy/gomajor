@@ -100,7 +100,7 @@ func get(args []string) error {
 		return fmt.Errorf("missing package spec")
 	}
 	// split the package spec into its components
-	pkgpath, target := packages.SplitSpec(fset.Arg(0))
+	pkgpath, query := packages.SplitSpec(fset.Arg(0))
 	mod, err := modproxy.QueryPackage(pkgpath, cached)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func get(args []string) error {
 	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// figure out what version to get
 	var version string
-	switch target {
+	switch query {
 	case "":
 		version = mod.MaxVersion("", pre)
 	case "latest":
@@ -118,7 +118,7 @@ func get(args []string) error {
 			return err
 		}
 		version = latest.MaxVersion("", pre)
-		target = version
+		query = version
 	case "master", "default":
 		latest, err := modproxy.Latest(mod.Path, cached)
 		if err != nil {
@@ -126,21 +126,21 @@ func get(args []string) error {
 		}
 		version = latest.MaxVersion("", pre)
 	default:
-		if !semver.IsValid(target) {
-			return fmt.Errorf("invalid version: %s", target)
+		if !semver.IsValid(query) {
+			return fmt.Errorf("invalid version: %s", query)
 		}
 		// best effort to detect +incompatible versions
-		if v := mod.MaxVersion(target, pre); v != "" {
+		if v := mod.MaxVersion(query, pre); v != "" {
 			version = v
 		} else {
-			version = target
+			version = query
 		}
 	}
 	// go get
 	if goget {
 		spec := packages.JoinPath(modprefix, version, pkgdir)
-		if target != "" {
-			spec += "@" + target
+		if query != "" {
+			spec += "@" + query
 		}
 		fmt.Println("go get", spec)
 		cmd := exec.Command("go", "get", spec)
