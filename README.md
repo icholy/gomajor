@@ -13,6 +13,7 @@ The commands are:
 
     get     upgrade to a major version
     list    list available updates
+    path    modify the module path
     help    show this help text
 ```
 
