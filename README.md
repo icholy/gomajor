@@ -50,7 +50,7 @@ cluster.go: github.com/go-redis/redis/v8/internal/rand -> github.com/go-redis/re
 ### Change Module Path
 
 ```
-$ gomajor path github.com/icholy/redis
+$ gomajor path github.com/icholy/redis/v8
 module github.com/icholy/redis/v8
 bench_test.go: github.com/go-redis/redis/v8 -> github.com/icholy/redis/v8
 cluster.go: github.com/go-redis/redis/v8/internal -> github.com/icholy/redis/v8/internal
