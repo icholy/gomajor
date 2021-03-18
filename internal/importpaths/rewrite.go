@@ -48,10 +48,8 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 // RewriteFile rewrites import statments in the named file
 // according to the rules supplied by the map of strings.
 func RewriteFile(name string, replace ReplaceFunc) error {
-
 	// create an empty fileset.
 	fset := token.NewFileSet()
-
 	// parse the .go file.
 	// we are parsing the entire file with comments, so we don't lose anything
 	// if we need to write it back out.
@@ -64,17 +62,14 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		}
 		return err
 	}
-
 	// iterate through the import paths. if a change occurs update bool.
 	change := false
 	for _, i := range f.Imports {
-
 		// unquote the import path value.
 		path, err := strconv.Unquote(i.Path.Value)
 		if err != nil {
 			return err
 		}
-
 		// replace the value using the replace function
 		path, err = replace(name, path)
 		if err != nil {
@@ -86,22 +81,18 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		i.Path.Value = strconv.Quote(path)
 		change = true
 	}
-
 	for _, cg := range f.Comments {
 		for _, c := range cg.List {
 			if strings.HasPrefix(c.Text, "// import \"") {
-
 				// trim off extra comment stuff
 				ctext := c.Text
 				ctext = strings.TrimPrefix(ctext, "// import")
 				ctext = strings.TrimSpace(ctext)
-
 				// unquote the comment import path value
 				ctext, err := strconv.Unquote(ctext)
 				if err != nil {
 					return err
 				}
-
 				// match the comment import path with the given replacement map
 				ctext, err = replace(name, ctext)
 				if err != nil {
@@ -115,12 +106,10 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 			}
 		}
 	}
-
 	// if no change occured, then we don't need to write to disk, just return.
 	if !change {
 		return nil
 	}
-
 	// create a temporary file, this easily avoids conflicts.
 	temp := name + ".temp"
 	w, err := os.Create(temp)
@@ -128,19 +117,16 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		return err
 	}
 	defer w.Close()
-
 	// write changes to .temp file, and include proper formatting.
 	err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(w, fset, f)
 	if err != nil {
 		return err
 	}
-
 	// close the writer
 	err = w.Close()
 	if err != nil {
 		return err
 	}
-
 	// rename the .temp to .go
 	return os.Rename(temp, name)
 }
