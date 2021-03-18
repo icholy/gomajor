@@ -248,8 +248,9 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// rewrite import videos
+	oldmodprefix := packages.ModPrefix(file.Module.Mod.Path)
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
-		_, pkgdir, ok := packages.SplitPath(modprefix, path)
+		_, pkgdir, ok := packages.SplitPath(oldmodprefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
 		}
