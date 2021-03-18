@@ -27,7 +27,7 @@ The commands are:
 
     get     upgrade to a major version
     list    list available updates
-	path    modify the module path
+    path    modify the module path
     help    show this help text
 `
 
@@ -207,35 +207,39 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// figure out the new module path
-	modpath := flag.Arg(0)
+	modpath := fset.Arg(0)
 	if modpath == "" {
 		modpath = file.Module.Mod.Path
 	}
 	modprefix := packages.ModPrefix(modpath)
+	// increment the path version
 	if next {
 		major, ok := packages.ModMajor(modpath)
-		if !ok {
+		if !ok || major == "" {
 			major = "v1"
 		}
+		fmt.Println("Major", major)
 		version, err = modproxy.NextMajor(major)
 		if err != nil {
 			return err
 		}
 	}
+	// if there's a version, use it to update the modpath
 	if version != "" {
 		if !semver.IsValid(version) {
 			return fmt.Errorf("invalid version: %q", version)
 		}
 		modpath = packages.JoinPath(modprefix, version, "")
 	}
+	fmt.Println(modpath)
+	if !rewrite {
+		return nil
+	}
 	// update go.mod
 	if err := file.AddModuleStmt(modpath); err != nil {
 		return err
 	}
 	// rewrite import videos
-	if !rewrite {
-		return nil
-	}
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
 		_, pkgdir, ok := packages.SplitPath(modprefix, path)
 		if !ok {
