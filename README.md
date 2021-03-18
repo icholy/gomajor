@@ -67,6 +67,7 @@ cluster_test.go: github.com/go-redis/redis/v8/internal/hashtag -> github.com/ich
 * Finds latest version.
 * Rewrites your import paths.
 * Lets you ignore SIV on the command line.
+* Update your module's major version.
 
 ### Warning:
 
