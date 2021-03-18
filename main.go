@@ -212,24 +212,26 @@ func pathcmd(args []string) error {
 		modpath = file.Module.Mod.Path
 	}
 	modprefix := packages.ModPrefix(modpath)
+	// find the current version if one wasn't provided
+	if version == "" {
+		var ok bool
+		version, ok = packages.ModMajor(modpath)
+		if !ok || version == "" {
+			version = "v1"
+		}
+	}
 	// increment the path version
 	if next {
-		major, ok := packages.ModMajor(modpath)
-		if !ok || major == "" {
-			major = "v1"
-		}
-		version, err = modproxy.NextMajor(major)
+		version, err = modproxy.NextMajor(version)
 		if err != nil {
 			return err
 		}
 	}
-	// if there's a version, use it to update the modpath
-	if version != "" {
-		if !semver.IsValid(version) {
-			return fmt.Errorf("invalid version: %q", version)
-		}
-		modpath = packages.JoinPath(modprefix, version, "")
+	if !semver.IsValid(version) {
+		return fmt.Errorf("invalid version: %q", version)
 	}
+	// create the new modpath
+	modpath = packages.JoinPath(modprefix, version, "")
 	fmt.Printf("module %s\n", modpath)
 	if !rewrite {
 		return nil
