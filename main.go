@@ -211,7 +211,6 @@ func pathcmd(args []string) error {
 	if modpath == "" {
 		modpath = file.Module.Mod.Path
 	}
-	modprefix := packages.ModPrefix(modpath)
 	// find the current version if one wasn't provided
 	if version == "" {
 		var ok bool
@@ -231,6 +230,8 @@ func pathcmd(args []string) error {
 		return fmt.Errorf("invalid version: %q", version)
 	}
 	// create the new modpath
+	modprefix := packages.ModPrefix(modpath)
+	oldmodprefix := packages.ModPrefix(file.Module.Mod.Path)
 	modpath = packages.JoinPath(modprefix, version, "")
 	fmt.Printf("module %s\n", modpath)
 	if !rewrite {
@@ -248,7 +249,6 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// rewrite import videos
-	oldmodprefix := packages.ModPrefix(file.Module.Mod.Path)
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
 		_, pkgdir, ok := packages.SplitPath(oldmodprefix, path)
 		if !ok {
