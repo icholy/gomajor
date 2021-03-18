@@ -230,12 +230,19 @@ func pathcmd(args []string) error {
 		}
 		modpath = packages.JoinPath(modprefix, version, "")
 	}
-	fmt.Println(modpath)
+	fmt.Printf("module %s\n", modpath)
 	if !rewrite {
 		return nil
 	}
 	// update go.mod
 	if err := file.AddModuleStmt(modpath); err != nil {
+		return err
+	}
+	data, err = file.Format()
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(name, data, os.ModePerm); err != nil {
 		return err
 	}
 	// rewrite import videos
