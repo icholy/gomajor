@@ -218,7 +218,6 @@ func pathcmd(args []string) error {
 		if !ok || major == "" {
 			major = "v1"
 		}
-		fmt.Println("Major", major)
 		version, err = modproxy.NextMajor(major)
 		if err != nil {
 			return err
