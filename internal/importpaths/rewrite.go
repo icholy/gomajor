@@ -1,3 +1,5 @@
+// Package importpaths implement import path rewriting
+// credit: https://gist.github.com/jackspirou/61ce33574e9f411b8b4a
 package importpaths
 
 import (
