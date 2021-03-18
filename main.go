@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 
+	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 
@@ -26,6 +27,7 @@ The commands are:
 
     get     upgrade to a major version
     list    list available updates
+	path    modify the module path
     help    show this help text
 `
 
@@ -36,11 +38,15 @@ func main() {
 	flag.Parse()
 	switch flag.Arg(0) {
 	case "get":
-		if err := get(flag.Args()[1:]); err != nil {
+		if err := getcmd(flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	case "list":
-		if err := list(flag.Args()[1:]); err != nil {
+		if err := listcmd(flag.Args()[1:]); err != nil {
+			log.Fatal(err)
+		}
+	case "path":
+		if err := pathcmd(flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	case "help", "":
@@ -51,7 +57,7 @@ func main() {
 	}
 }
 
-func list(args []string) error {
+func listcmd(args []string) error {
 	var dir string
 	var pre, cached, major bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
@@ -59,7 +65,9 @@ func list(args []string) error {
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.BoolVar(&major, "major", false, "only show newer major versions")
-	fset.Parse(args)
+	if err := fset.Parse(args); err != nil {
+		return err
+	}
 	dependencies, err := packages.Direct(dir)
 	if err != nil {
 		return err
@@ -86,7 +94,7 @@ func list(args []string) error {
 	return nil
 }
 
-func get(args []string) error {
+func getcmd(args []string) error {
 	var dir string
 	var rewrite, goget, pre, cached bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
@@ -95,7 +103,9 @@ func get(args []string) error {
 	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
-	fset.Parse(args)
+	if err := fset.Parse(args); err != nil {
+		return err
+	}
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
 	}
@@ -164,6 +174,74 @@ func get(args []string) error {
 			return "", importpaths.ErrSkip
 		}
 		newpath := packages.JoinPath(modprefix, version, pkgdir0)
+		if newpath == path {
+			return "", importpaths.ErrSkip
+		}
+		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
+		return newpath, nil
+	})
+}
+
+func pathcmd(args []string) error {
+	var dir, version string
+	var next, rewrite bool
+	fset := flag.NewFlagSet("path", flag.ExitOnError)
+	fset.BoolVar(&next, "next", false, "increment the module path version")
+	fset.StringVar(&version, "version", "", "set the module path version")
+	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
+	fset.StringVar(&dir, "dir", ".", "working directory")
+	if err := fset.Parse(args); err != nil {
+		return err
+	}
+	// find and parse go.mod
+	name, err := packages.FindModFile(dir)
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(name)
+	if err != nil {
+		return err
+	}
+	file, err := modfile.Parse(name, data, nil)
+	if err != nil {
+		return err
+	}
+	// figure out the new module path
+	modpath := flag.Arg(0)
+	if modpath == "" {
+		modpath = file.Module.Mod.Path
+	}
+	modprefix := packages.ModPrefix(modpath)
+	if next {
+		major, ok := packages.ModMajor(modpath)
+		if !ok {
+			major = "v1"
+		}
+		version, err = modproxy.NextMajor(major)
+		if err != nil {
+			return err
+		}
+	}
+	if version != "" {
+		if !semver.IsValid(version) {
+			return fmt.Errorf("invalid version: %q", version)
+		}
+		modpath = packages.JoinPath(modprefix, version, "")
+	}
+	// update go.mod
+	if err := file.AddModuleStmt(modpath); err != nil {
+		return err
+	}
+	// rewrite import videos
+	if !rewrite {
+		return nil
+	}
+	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
+		_, pkgdir, ok := packages.SplitPath(modprefix, path)
+		if !ok {
+			return "", importpaths.ErrSkip
+		}
+		newpath := packages.JoinPath(modprefix, version, pkgdir)
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}
