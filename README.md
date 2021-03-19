@@ -29,8 +29,8 @@ github.com/go-redis/redis: v6.15.9+incompatible [latest v8.1.3]
 ```
 $ gomajor get github.com/go-redis/redis@latest
 go get github.com/go-redis/redis/v8@v8.1.3
-foo.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
-bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
+foo.go:4:2 github.com/go-redis/redis/v8
+bar.go:5:2 github.com/go-redis/redis/v8
 ```
 
 ### Increment Module Path Version
@@ -38,20 +38,20 @@ bar.go: github.com/go-redis/redis -> github.com/go-redis/redis/v8
 ```
 $ gomajor path -next
 module github.com/go-redis/redis/v9
-bench_test.go: github.com/go-redis/redis/v8 -> github.com/go-redis/redis/v9
-cluster.go: github.com/go-redis/redis/v8/internal -> github.com/go-redis/redis/v9/internal
-cluster.go: github.com/go-redis/redis/v8/internal/hashtag -> github.com/go-redis/redis/v9/internal/hashtag
+bench_test.go:11:2 github.com/go-redis/redis/v9
+cluster.go:15:2 github.com/go-redis/redis/v9/internal
+cluster.go:16:2 github.com/go-redis/redis/v9/internal/hashtag
 # etc ...
 ```
 
 ### Change Module Path
 
 ```
-$ gomajor path github.com/icholy/redis/v8
-module github.com/icholy/redis/v8
-bench_test.go: github.com/go-redis/redis/v8 -> github.com/icholy/redis/v8
-cluster.go: github.com/go-redis/redis/v8/internal -> github.com/icholy/redis/v8/internal
-cluster.go: github.com/go-redis/redis/v8/internal/hashtag -> github.com/icholy/redis/v8/internal/hashtag
+$ gomajor path goredis.io
+module goredis.io
+bench_test.go:11:2 goredis.io
+cluster.go:15:2 goredis.io/internal
+cluster.go:16:2 goredis.io/internal/hashtag
 # etc ...
 ```
 
