@@ -111,19 +111,20 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		return nil
 	}
 	// create a temporary file, this easily avoids conflicts.
-	info, err := os.Lstat(name)
+	temp := name + ".temp"
+	w, err := os.Create(temp)
 	if err != nil {
 		return err
 	}
-	temp := name + ".temp"
-	w, err := os.Create(temp)
+	defer w.Close()
+	// preserve permissions
+	info, err := os.Lstat(name)
 	if err != nil {
 		return err
 	}
 	if err := w.Chmod(info.Mode()); err != nil {
 		return err
 	}
-	defer w.Close()
 	// write changes to .temp file, and include proper formatting.
 	err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(w, fset, f)
 	if err != nil {
