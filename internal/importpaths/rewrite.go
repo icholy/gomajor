@@ -19,7 +19,7 @@ var ErrSkip = errors.New("skip import")
 
 // ReplaceFunc is called with every import path and returns the replacement path
 // if the second return parameter is false, the replacement doesn't happen
-type ReplaceFunc func(name, path string) (string, error)
+type ReplaceFunc func(pos token.Position, path string) (string, error)
 
 // Rewrite takes a directory path and a function for replacing imports paths
 func Rewrite(dir string, replace ReplaceFunc) error {
@@ -71,7 +71,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 			return err
 		}
 		// replace the value using the replace function
-		path, err = replace(name, path)
+		path, err = replace(fset.Position(i.Pos()), path)
 		if err != nil {
 			if err == ErrSkip {
 				continue
@@ -94,7 +94,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 					return err
 				}
 				// match the comment import path with the given replacement map
-				ctext, err = replace(name, ctext)
+				ctext, err = replace(fset.Position(c.Pos()), ctext)
 				if err != nil {
 					if err == ErrSkip {
 						continue

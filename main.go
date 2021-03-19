@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go/token"
 	"log"
 	"os"
 	"os/exec"
@@ -169,7 +170,7 @@ func getcmd(args []string) error {
 	if !rewrite {
 		return nil
 	}
-	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
+	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
 		_, pkgdir0, ok := packages.SplitPath(modprefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
@@ -181,7 +182,7 @@ func getcmd(args []string) error {
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}
-		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
+		fmt.Printf("%s %s -> %s\n", pos, path, newpath)
 		return newpath, nil
 	})
 }
@@ -260,7 +261,7 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// rewrite import paths
-	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
+	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
 		_, pkgdir, ok := packages.SplitPath(oldmodprefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
@@ -269,7 +270,7 @@ func pathcmd(args []string) error {
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}
-		fmt.Printf("%s: %s -> %s\n", name, path, newpath)
+		fmt.Printf("%s %s -> %s\n", pos, path, newpath)
 		return newpath, nil
 	})
 }
