@@ -22,6 +22,7 @@ var ErrSkip = errors.New("skip import")
 type ReplaceFunc func(pos token.Position, path string) (string, error)
 
 // Rewrite takes a directory path and a function for replacing imports paths
+// Note: .git, vendor, and submodule directories are skipped.
 func Rewrite(dir string, replace ReplaceFunc) error {
 	return filepath.Walk(dir, func(name string, info os.FileInfo, err error) error {
 		// check errors
@@ -34,6 +35,16 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 			// don't recurse into vendor or .git directories
 			if info.Name() == "vendor" || info.Name() == ".git" {
 				return filepath.SkipDir
+			}
+			// don't recurse into sub-modules
+			if name != dir {
+				_, err := os.Lstat(filepath.Join(name, "go.mod"))
+				if err == nil {
+					return filepath.SkipDir
+				}
+				if !os.IsNotExist(err) {
+					return err
+				}
 			}
 			return nil
 		}
