@@ -69,9 +69,7 @@ func listcmd(args []string) error {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor list")
 		fset.PrintDefaults()
 	}
-	if err := fset.Parse(args); err != nil {
-		return err
-	}
+	fset.Parse(args)
 	dependencies, err := packages.Direct(dir)
 	if err != nil {
 		return err
@@ -111,9 +109,7 @@ func getcmd(args []string) error {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor get <pathspec>")
 		fset.PrintDefaults()
 	}
-	if err := fset.Parse(args); err != nil {
-		return err
-	}
+	fset.Parse(args)
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
 	}
@@ -202,9 +198,7 @@ func pathcmd(args []string) error {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor path [modpath]")
 		fset.PrintDefaults()
 	}
-	if err := fset.Parse(args); err != nil {
-		return err
-	}
+	fset.Parse(args)
 	// find and parse go.mod
 	name, err := packages.FindModFile(dir)
 	if err != nil {
