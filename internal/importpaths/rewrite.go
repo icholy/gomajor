@@ -44,6 +44,7 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 				}
 				if !os.IsNotExist(err) {
 					log.Println("import rewrite:", err)
+					return filepath.SkipDir
 				}
 			}
 			return nil
