@@ -260,7 +260,7 @@ func pathcmd(args []string) error {
 	if err := os.WriteFile(name, data, os.ModePerm); err != nil {
 		return err
 	}
-	// rewrite import videos
+	// rewrite import paths
 	return importpaths.Rewrite(dir, func(name, path string) (string, error) {
 		_, pkgdir, ok := packages.SplitPath(oldmodprefix, path)
 		if !ok {
