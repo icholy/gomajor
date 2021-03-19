@@ -127,13 +127,9 @@ func Direct(dir string) ([]module.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	replaced := map[string]bool{}
-	for _, r := range file.Replace {
-		replaced[r.Old.Path] = true
-	}
 	var mods []module.Version
 	for _, req := range file.Require {
-		if !req.Indirect && !replaced[req.Mod.Path] {
+		if !req.Indirect {
 			mods = append(mods, req.Mod)
 		}
 	}
