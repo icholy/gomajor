@@ -126,13 +126,15 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		return err
 	}
 	// write changes to .temp file, and include proper formatting.
-	err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(w, fset, f)
-	if err != nil {
+	cfg := &printer.Config{
+		Mode:     printer.TabIndent | printer.UseSpaces,
+		Tabwidth: 8,
+	}
+	if err := cfg.Fprint(w, fset, f); err != nil {
 		return err
 	}
 	// close the writer
-	err = w.Close()
-	if err != nil {
+	if err := w.Close(); err != nil {
 		return err
 	}
 	// rename the .temp to .go
