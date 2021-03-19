@@ -182,7 +182,7 @@ func getcmd(args []string) error {
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}
-		fmt.Printf("%s %s -> %s\n", pos, path, newpath)
+		fmt.Printf("%s %s\n", pos, newpath)
 		return newpath, nil
 	})
 }
@@ -270,7 +270,7 @@ func pathcmd(args []string) error {
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}
-		fmt.Printf("%s %s -> %s\n", pos, path, newpath)
+		fmt.Printf("%s %s\n", pos, newpath)
 		return newpath, nil
 	})
 }
