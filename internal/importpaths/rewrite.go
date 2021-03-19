@@ -43,7 +43,7 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 					return filepath.SkipDir
 				}
 				if !os.IsNotExist(err) {
-					return err
+					log.Println("import rewrite:", err)
 				}
 			}
 			return nil
