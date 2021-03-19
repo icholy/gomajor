@@ -251,7 +251,12 @@ func pathcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(name, data, os.ModePerm); err != nil {
+	// save the file with the same permissions
+	info, err := os.Lstat(name)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(name, data, info.Mode().Perm()); err != nil {
 		return err
 	}
 	// rewrite import paths
