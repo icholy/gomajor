@@ -41,9 +41,6 @@ module github.com/go-redis/redis/v9
 bench_test.go: github.com/go-redis/redis/v8 -> github.com/go-redis/redis/v9
 cluster.go: github.com/go-redis/redis/v8/internal -> github.com/go-redis/redis/v9/internal
 cluster.go: github.com/go-redis/redis/v8/internal/hashtag -> github.com/go-redis/redis/v9/internal/hashtag
-cluster.go: github.com/go-redis/redis/v8/internal/pool -> github.com/go-redis/redis/v9/internal/pool
-cluster.go: github.com/go-redis/redis/v8/internal/proto -> github.com/go-redis/redis/v9/internal/proto
-cluster.go: github.com/go-redis/redis/v8/internal/rand -> github.com/go-redis/redis/v9/internal/rand
 # etc ...
 ```
 
@@ -55,11 +52,6 @@ module github.com/icholy/redis/v8
 bench_test.go: github.com/go-redis/redis/v8 -> github.com/icholy/redis/v8
 cluster.go: github.com/go-redis/redis/v8/internal -> github.com/icholy/redis/v8/internal
 cluster.go: github.com/go-redis/redis/v8/internal/hashtag -> github.com/icholy/redis/v8/internal/hashtag
-cluster.go: github.com/go-redis/redis/v8/internal/pool -> github.com/icholy/redis/v8/internal/pool
-cluster.go: github.com/go-redis/redis/v8/internal/proto -> github.com/icholy/redis/v8/internal/proto
-cluster.go: github.com/go-redis/redis/v8/internal/rand -> github.com/icholy/redis/v8/internal/rand
-cluster_test.go: github.com/go-redis/redis/v8 -> github.com/icholy/redis/v8
-cluster_test.go: github.com/go-redis/redis/v8/internal/hashtag -> github.com/icholy/redis/v8/internal/hashtag
 # etc ...
 ```
 
