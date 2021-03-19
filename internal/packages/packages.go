@@ -123,7 +123,7 @@ func Direct(dir string) ([]module.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := modfile.Parse(name, data, nil)
+	file, err := modfile.ParseLax(name, data, nil)
 	if err != nil {
 		return nil, err
 	}
