@@ -65,6 +65,10 @@ func listcmd(args []string) error {
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.BoolVar(&major, "major", false, "only show newer major versions")
+	fset.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: gomajor list")
+		fset.PrintDefaults()
+	}
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
@@ -103,6 +107,10 @@ func getcmd(args []string) error {
 	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: gomajor get <pathspec>")
+		fset.PrintDefaults()
+	}
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
@@ -190,6 +198,10 @@ func pathcmd(args []string) error {
 	fset.StringVar(&version, "version", "", "set the module path version")
 	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: gomajor path [modpath]")
+		fset.PrintDefaults()
+	}
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
