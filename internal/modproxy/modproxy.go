@@ -55,6 +55,12 @@ func NextMajor(version string) (string, error) {
 	return fmt.Sprintf("v%d", major), nil
 }
 
+// WithMajorPath returns the module path for the provided version
+func (m *Module) WithMajorPath(version string) string {
+	prefix := packages.ModPrefix(m.Path)
+	return packages.JoinPath(prefix, version, "")
+}
+
 // NextMajorPath returns the module path of the next major version
 func (m *Module) NextMajorPath() (string, bool) {
 	latest := m.MaxVersion("", true)
@@ -68,8 +74,7 @@ func (m *Module) NextMajorPath() (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	prefix := packages.ModPrefix(m.Path)
-	return packages.JoinPath(prefix, next, ""), true
+	return m.WithMajorPath(next), true
 }
 
 // Query the module proxy for all versions of a module.
@@ -134,6 +139,20 @@ func Latest(modpath string, cached bool) (*Module, error) {
 		next, ok, err := Query(nextpath, cached)
 		if err != nil {
 			return nil, err
+		}
+		if !ok {
+			// handle the case where a project switched to modules
+			// without incrementing the major version
+			version := latest.MaxVersion("", true)
+			if semver.Build(version) == "+incompatible" {
+				nextpath = latest.WithMajorPath(semver.Major(version))
+				if nextpath != latest.Path {
+					next, ok, err = Query(nextpath, cached)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
 		}
 		if !ok {
 			return latest, nil

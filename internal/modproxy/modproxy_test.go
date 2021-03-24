@@ -5,11 +5,19 @@ import (
 )
 
 func TestLatest(t *testing.T) {
-	mod, err := Latest("github.com/go-redis/redis", true)
-	if err != nil {
-		t.Fatal(err)
+	tests := []string{
+		"github.com/go-redis/redis",
+		"github.com/russross/blackfriday",
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion("", false))
+	for _, tt := range tests {
+		t.Run(tt, func(t *testing.T) {
+			mod, err := Latest(tt, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("Latest %s %s", mod.Path, mod.MaxVersion("", false))
+		})
+	}
 }
 
 func TestQuery(t *testing.T) {
