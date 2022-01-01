@@ -12,6 +12,7 @@ import (
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 
+	"github.com/icholy/gomajor/internal/fixdocs"
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
 	"github.com/icholy/gomajor/internal/packages"
@@ -189,12 +190,13 @@ func getcmd(args []string) error {
 
 func pathcmd(args []string) error {
 	var dir, version string
-	var next, rewrite bool
+	var next, rewrite, docs bool
 	fset := flag.NewFlagSet("path", flag.ExitOnError)
 	fset.BoolVar(&next, "next", false, "increment the module path version")
 	fset.StringVar(&version, "version", "", "set the module path version")
 	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&docs, "docs", false, "rewrite docs (experimental)")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor path [modpath]")
 		fset.PrintDefaults()
@@ -261,7 +263,7 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// rewrite import paths
-	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
+	err = importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
 		_, pkgdir, ok := packages.SplitPath(oldmodprefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
@@ -273,4 +275,12 @@ func pathcmd(args []string) error {
 		fmt.Printf("%s %s\n", pos, newpath)
 		return newpath, nil
 	})
+	if err != nil {
+		return err
+	}
+	// rewrite docs
+	if docs {
+		return fixdocs.RewriteModPath(dir, []string{".md"}, modprefix, version)
+	}
+	return nil
 }
