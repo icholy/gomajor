@@ -32,6 +32,9 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 		}
 		// skip directories
 		if info.IsDir() {
+			if name == dir {
+				return nil
+			}
 			// don't recurse into vendor
 			if info.Name() == "vendor" {
 				return filepath.SkipDir
@@ -41,15 +44,13 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 				return filepath.SkipDir
 			}
 			// don't recurse into sub-modules
-			if name != dir {
-				_, err := os.Lstat(filepath.Join(name, "go.mod"))
-				if err == nil {
-					return filepath.SkipDir
-				}
-				if !os.IsNotExist(err) {
-					log.Println("import rewrite:", err)
-					return filepath.SkipDir
-				}
+			_, err := os.Lstat(filepath.Join(name, "go.mod"))
+			if err == nil {
+				return filepath.SkipDir
+			}
+			if !os.IsNotExist(err) {
+				log.Println("import rewrite:", err)
+				return filepath.SkipDir
 			}
 			return nil
 		}
