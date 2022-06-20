@@ -12,14 +12,14 @@ type Mod struct {
 }
 
 func Create(name string) (Mod, error) {
+	if name == "" {
+		name = "temp"
+	}
 	dir, err := os.MkdirTemp(os.TempDir(), "tempmod")
 	if err != nil {
 		return Mod{}, err
 	}
 	m := Mod{Dir: dir}
-	if name == "" {
-		name = "temp"
-	}
 	if err := m.ExecGo("mod", "init", name); err != nil {
 		return Mod{}, err
 	}
@@ -46,7 +46,6 @@ func (m Mod) UsePackage(pkgpath string) error {
 	var src bytes.Buffer
 	src.WriteString("package tmp\n")
 	fmt.Fprintf(&src, "import _ %q\n", pkgpath)
-	src.WriteString("func main() {}\n")
 	if _, err := src.WriteTo(tmp); err != nil {
 		return err
 	}
