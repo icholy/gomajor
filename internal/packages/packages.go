@@ -163,14 +163,18 @@ func LoadModulePackages(mod module.Version) ([]*Package, error) {
 		return nil, err
 	}
 	defer temp.Delete()
-	if err := temp.ExecGo("get", "-t", mod.String()); err != nil {
+	spec := fmt.Sprintf("%s/...", mod.Path)
+	if mod.Version != "" {
+		spec += "@" + mod.Version
+	}
+	if err := temp.ExecGo("get", "-t", spec); err != nil {
 		return nil, err
 	}
 	cfg := &packages.Config{
 		Dir:  temp.Dir,
 		Mode: packages.LoadTypes | packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedDeps,
 	}
-	pkgs, err := packages.Load(cfg, fmt.Sprintf("%s...", mod.Path))
+	pkgs, err := packages.Load(cfg, fmt.Sprintf("%s/...", mod.Path))
 	if err != nil {
 		return nil, err
 	}
