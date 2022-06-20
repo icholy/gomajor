@@ -1,8 +1,6 @@
 package tempmod
 
 import (
-	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 )
@@ -35,19 +33,4 @@ func (m Mod) ExecGo(args ...string) error {
 
 func (m Mod) Delete() error {
 	return os.RemoveAll(m.Dir)
-}
-
-func (m Mod) UsePackage(pkgpath string) error {
-	tmp, err := os.CreateTemp(m.Dir, "*-import.go")
-	if err != nil {
-		return err
-	}
-	defer tmp.Close()
-	var src bytes.Buffer
-	src.WriteString("package tmp\n")
-	fmt.Fprintf(&src, "import _ %q\n", pkgpath)
-	if _, err := src.WriteTo(tmp); err != nil {
-		return err
-	}
-	return tmp.Close()
 }

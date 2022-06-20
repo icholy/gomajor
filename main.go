@@ -17,7 +17,6 @@ import (
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
 	"github.com/icholy/gomajor/internal/packages"
-	"github.com/icholy/gomajor/internal/tempmod"
 )
 
 var help = `
@@ -258,19 +257,8 @@ func diffcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	// create a temp module to work in
-	// TODO: find a cleaner way to do this.
-	temp, err := tempmod.Create("")
-	if err != nil {
-		return err
-	}
-	defer temp.Delete()
-	// go get the resolved version in the temp module
-	if err := temp.ExecGo("get", "-t", spec.String()); err != nil {
-		return err
-	}
 	// load all packages in the resolved version
-	newpkgs, err := packages.LoadModulePackages(dir, spec.Module())
+	newpkgs, err := packages.LoadModulePackages(spec.Module())
 	if err != nil {
 		return fmt.Errorf("packages.LoadModulePackages: %v", err)
 	}

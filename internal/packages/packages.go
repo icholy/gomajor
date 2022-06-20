@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/icholy/gomajor/internal/tempmod"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
@@ -155,10 +156,18 @@ func IsInternal(pkgpath string) bool {
 
 type Package = packages.Package
 
-// LoadModulePackages packages in a module.
-func LoadModulePackages(dir string, mod module.Version) ([]*Package, error) {
+// LoadModulePackages all packages in a module.
+func LoadModulePackages(mod module.Version) ([]*Package, error) {
+	temp, err := tempmod.Create("")
+	if err != nil {
+		return nil, err
+	}
+	defer temp.Delete()
+	if err := temp.ExecGo("get", "-t", mod.String()); err != nil {
+		return nil, err
+	}
 	cfg := &packages.Config{
-		Dir:  dir,
+		Dir:  temp.Dir,
 		Mode: packages.LoadTypes | packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedDeps,
 	}
 	pkgs, err := packages.Load(cfg, fmt.Sprintf("%s...", mod.Path))
@@ -172,6 +181,9 @@ func LoadModulePackages(dir string, mod module.Version) ([]*Package, error) {
 		if len(pkg.Errors) != 0 {
 			return nil, pkg.Errors[0]
 		}
+	}
+	if err := temp.Delete(); err != nil {
+		return nil, err
 	}
 	return pkgs, nil
 }
