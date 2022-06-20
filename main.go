@@ -29,6 +29,7 @@ The commands are:
     get     upgrade to a major version
     list    list available updates
     path    modify the module path
+    diff    list api differences
     help    show this help text
 `
 
@@ -48,6 +49,10 @@ func main() {
 		}
 	case "path":
 		if err := pathcmd(flag.Args()[1:]); err != nil {
+			log.Fatal(err)
+		}
+	case "diff":
+		if err := diffcmd(flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	case "help", "":
@@ -228,4 +233,28 @@ func pathcmd(args []string) error {
 		fmt.Printf("%s %s\n", pos, newpath)
 		return newpath, nil
 	})
+}
+
+func diffcmd(args []string) error {
+	var dir string
+	var pre, cached bool
+	fset := flag.NewFlagSet("get", flag.ExitOnError)
+	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: gomajor get <pathspec>")
+		fset.PrintDefaults()
+	}
+	fset.Parse(args)
+	if fset.NArg() != 1 {
+		return fmt.Errorf("missing package spec")
+	}
+	// resolve the version
+	spec, err := modproxy.Resolve(fset.Arg(0), cached, pre)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("resolved: %s\n", spec)
+	return nil
 }
