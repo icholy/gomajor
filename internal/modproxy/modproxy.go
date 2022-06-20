@@ -195,3 +195,66 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 	}
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
 }
+
+type Spec struct {
+	ModPrefix  string
+	Version    string
+	PackageDir string
+	Query      string
+}
+
+// String formats the spec to a string that can be passed to 'go get'.
+func (s Spec) String() string {
+	spec := packages.JoinPath(s.ModPrefix, s.Version, s.PackageDir)
+	if s.Query != "" {
+		spec += "@" + s.Query
+	}
+	return spec
+}
+
+// Resolve a module version given a package@version spec string.
+func Resolve(spec string, cached, pre bool) (*Spec, error) {
+	// split the package spec into its components
+	pkgpath, query := packages.SplitSpec(spec)
+	mod, err := QueryPackage(pkgpath, cached)
+	if err != nil {
+		return nil, err
+	}
+	// figure out what version to get
+	var version string
+	switch query {
+	case "":
+		version = mod.MaxVersion("", pre)
+	case "latest":
+		latest, err := Latest(mod.Path, cached)
+		if err != nil {
+			return nil, err
+		}
+		version = latest.MaxVersion("", pre)
+		query = version
+	case "master", "default":
+		latest, err := Latest(mod.Path, cached)
+		if err != nil {
+			return nil, err
+		}
+		version = latest.MaxVersion("", pre)
+	default:
+		if !semver.IsValid(query) {
+			return nil, fmt.Errorf("invalid version: %s", query)
+		}
+		// best effort to detect +incompatible versions
+		if v := mod.MaxVersion(query, pre); v != "" {
+			version = v
+		} else {
+			version = query
+		}
+	}
+	modprefix := packages.ModPrefix(mod.Path)
+	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
+	return &Spec{
+		ModPrefix:  modprefix,
+		PackageDir: pkgdir,
+		Version:    version,
+		Query:      query,
+	}, nil
+}

@@ -114,51 +114,15 @@ func getcmd(args []string) error {
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
 	}
-	// split the package spec into its components
-	pkgpath, query := packages.SplitSpec(fset.Arg(0))
-	mod, err := modproxy.QueryPackage(pkgpath, cached)
+	// resolve the version
+	spec, err := modproxy.Resolve(fset.Arg(0), cached, pre)
 	if err != nil {
 		return err
 	}
-	modprefix := packages.ModPrefix(mod.Path)
-	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
-	// figure out what version to get
-	var version string
-	switch query {
-	case "":
-		version = mod.MaxVersion("", pre)
-	case "latest":
-		latest, err := modproxy.Latest(mod.Path, cached)
-		if err != nil {
-			return err
-		}
-		version = latest.MaxVersion("", pre)
-		query = version
-	case "master", "default":
-		latest, err := modproxy.Latest(mod.Path, cached)
-		if err != nil {
-			return err
-		}
-		version = latest.MaxVersion("", pre)
-	default:
-		if !semver.IsValid(query) {
-			return fmt.Errorf("invalid version: %s", query)
-		}
-		// best effort to detect +incompatible versions
-		if v := mod.MaxVersion(query, pre); v != "" {
-			version = v
-		} else {
-			version = query
-		}
-	}
 	// go get
 	if goget {
-		spec := packages.JoinPath(modprefix, version, pkgdir)
-		if query != "" {
-			spec += "@" + query
-		}
-		fmt.Println("go get", spec)
-		cmd := exec.Command("go", "get", spec)
+		fmt.Println("go get", spec.String())
+		cmd := exec.Command("go", "get", spec.String())
 		cmd.Dir = dir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -171,14 +135,14 @@ func getcmd(args []string) error {
 		return nil
 	}
 	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
-		_, pkgdir0, ok := packages.SplitPath(modprefix, path)
+		_, pkgdir0, ok := packages.SplitPath(spec.ModPrefix, path)
 		if !ok {
 			return "", importpaths.ErrSkip
 		}
-		if pkgdir != "" && pkgdir != pkgdir0 {
+		if spec.PackageDir != "" && spec.PackageDir != pkgdir0 {
 			return "", importpaths.ErrSkip
 		}
-		newpath := packages.JoinPath(modprefix, version, pkgdir0)
+		newpath := packages.JoinPath(spec.ModPrefix, spec.Version, pkgdir0)
 		if newpath == path {
 			return "", importpaths.ErrSkip
 		}
