@@ -26,9 +26,12 @@ func Create(name string) (Mod, error) {
 
 func (m Mod) ExecGo(args ...string) error {
 	cmd := exec.Command("go", args...)
-	cmd.Stderr = os.Stderr
 	cmd.Dir = m.Dir
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		os.Stderr.Write(output)
+	}
+	return err
 }
 
 func (m Mod) Delete() error {
