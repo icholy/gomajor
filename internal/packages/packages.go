@@ -112,8 +112,7 @@ func FindModFile(dir string) (string, error) {
 	return "", fmt.Errorf("cannot find go.mod")
 }
 
-// Direct returns a list of all modules that are direct dependencies
-func Direct(dir string) ([]module.Version, error) {
+func loadModFile(dir string) (*modfile.File, error) {
 	name, err := FindModFile(dir)
 	if err != nil {
 		return nil, err
@@ -122,40 +121,18 @@ func Direct(dir string) ([]module.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := modfile.ParseLax(name, data, nil)
+	return modfile.ParseLax(name, data, nil)
+}
+
+// Direct returns a list of all modules that are direct dependencies
+func Direct(dir string) ([]module.Version, error) {
+	file, err := loadModFile(dir)
 	if err != nil {
 		return nil, err
 	}
 	var mods []module.Version
 	for _, req := range file.Require {
 		if !req.Indirect {
-			mods = append(mods, req.Mod)
-		}
-	}
-	return mods, nil
-}
-
-// LocalVersions returns the locally required versions of modules with the provided prefix.
-func LocalVersions(dir, modprefix string) ([]module.Version, error) {
-	name, err := FindModFile(dir)
-	if err != nil {
-		return nil, err
-	}
-	data, err := os.ReadFile(name)
-	if err != nil {
-		return nil, err
-	}
-	file, err := modfile.ParseLax(name, data, nil)
-	if err != nil {
-		return nil, err
-	}
-	var mods []module.Version
-	for _, req := range file.Require {
-		if req.Indirect {
-			continue
-		}
-		modprefix0, _, ok := module.SplitPathVersion(req.Mod.Path)
-		if ok && modprefix == modprefix0 {
 			mods = append(mods, req.Mod)
 		}
 	}

@@ -10,6 +10,7 @@ import (
 // import path.
 type Index struct {
 	root *indexNode
+	list []module.Version
 }
 
 type indexNode struct {
@@ -41,6 +42,7 @@ func (i *Index) Add(m module.Version) error {
 		return fmt.Errorf("duplicate mod: %s", m)
 	}
 	node.mod = &m
+	i.list = append(i.list, m)
 	return nil
 }
 
@@ -63,4 +65,34 @@ func (i *Index) Lookup(pkgpath string) (module.Version, bool) {
 		return module.Version{}, false
 	}
 	return *mod, true
+}
+
+// Related returns all versions of the provided module.
+func (i *Index) Related(modpath string) []module.Version {
+	modprefix := ModPrefix(modpath)
+	var mods []module.Version
+	for _, mod := range i.list {
+		modprefix0, _, ok := module.SplitPathVersion(mod.Path)
+		if ok && modprefix == modprefix0 {
+			mods = append(mods, mod)
+		}
+	}
+	return mods
+}
+
+// LoadIndex reads the modfile into an Index.
+func LoadIndex(dir string) (*Index, error) {
+	file, err := loadModFile(dir)
+	if err != nil {
+		return nil, err
+	}
+	var idx Index
+	for _, req := range file.Require {
+		if !req.Indirect {
+			if err := idx.Add(req.Mod); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &idx, nil
 }
