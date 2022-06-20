@@ -288,7 +288,7 @@ func diffcmd(args []string) error {
 			}
 		}
 		if newpkg == nil {
-			fmt.Printf("package %s: deleted\n", pkgpath)
+			fmt.Printf("package %s: does not exist in %s\n", pkgpath, spec.Version)
 			continue
 		}
 		// load the local package type info
