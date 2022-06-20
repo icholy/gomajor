@@ -135,3 +135,16 @@ func Direct(dir string) ([]module.Version, error) {
 	}
 	return mods, nil
 }
+
+// IsInternal returns true if the provided package path is internal.
+func IsInternal(pkgpath string) bool {
+	switch {
+	case strings.HasSuffix(pkgpath, "/internal"):
+		return true
+	case strings.Contains(pkgpath, "/internal/"):
+		return true
+	case pkgpath == "internal", strings.HasPrefix(pkgpath, "internal/"):
+		return true
+	}
+	return false
+}
