@@ -205,9 +205,13 @@ type Spec struct {
 
 func (s Spec) Module() module.Version {
 	return module.Version{
-		Path: packages.JoinPath(s.ModPrefix, s.Version, ""),
+		Path:    packages.JoinPath(s.ModPrefix, s.Version, ""),
 		Version: s.Version,
 	}
+}
+
+func (s Spec) PackagePath() string {
+	return packages.JoinPath(s.ModPrefix, s.Version, s.PackageDir)
 }
 
 // String formats the spec to a string that can be passed to 'go get'.

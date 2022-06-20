@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"golang.org/x/exp/apidiff"
 	"golang.org/x/exp/slices"
@@ -277,6 +278,10 @@ func diffcmd(args []string) error {
 		mod, ok := index.Lookup(pkgpath)
 		// check if it belongs to the module we're looking for
 		if !ok || !slices.Contains(related, mod) {
+			continue
+		}
+		// if the spec contains a package directory, only diff that and its subdirs.
+		if spec.PackageDir != "" && !strings.HasPrefix(pkgpath, spec.PackagePath()) {
 			continue
 		}
 		// find the corresponding package in the temp module
