@@ -15,6 +15,7 @@ import (
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
 	"github.com/icholy/gomajor/internal/packages"
+	"github.com/icholy/gomajor/internal/tempmod"
 )
 
 var help = `
@@ -255,6 +256,15 @@ func diffcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("resolved: %s\n", spec)
+	// create a temp module to interogate
+	// TODO: find a cleaner way to do this
+	tmp, err := tempmod.Create("")
+	if err != nil {
+		return err
+	}
+	defer tmp.Delete()
+	if err := tmp.ExecGo("get", spec.String()); err != nil {
+		return err
+	}
 	return nil
 }
