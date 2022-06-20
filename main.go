@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 
+	"golang.org/x/exp/apidiff"
+	"golang.org/x/exp/slices"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
@@ -256,15 +258,62 @@ func diffcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	// create a temp module to interogate
-	// TODO: find a cleaner way to do this
-	tmp, err := tempmod.Create("")
+	// create a temp module to work in
+	// TODO: find a cleaner way to do this.
+	temp, err := tempmod.Create("")
 	if err != nil {
 		return err
 	}
-	defer tmp.Delete()
-	if err := tmp.ExecGo("get", spec.String()); err != nil {
+	defer temp.Delete()
+	// go get the resolved version in the temp module
+	if err := temp.ExecGo("get", "-t", spec.String()); err != nil {
 		return err
+	}
+	// load all packages in the resolved version
+	newpkgs, err := packages.LoadModulePackages(dir, spec.Module())
+	if err != nil {
+		return fmt.Errorf("packages.LoadModulePackages: %v", err)
+	}
+	// find the related corresponding local modules
+	index, err := packages.LoadIndex(dir)
+	if err != nil {
+		return err
+	}
+	related := index.Related(spec.ModPrefix)
+	// we only want to diff against packages that we're actually using
+	pkgpaths, err := importpaths.List(dir)
+	if err != nil {
+		return fmt.Errorf("importpaths.List: %v", err)
+	}
+	for _, pkgpath := range pkgpaths {
+		// find the corresponding module
+		if mod, ok := index.Lookup(pkgpath); ok && slices.Contains(related, mod) {
+			// find the corresponding package in the temp module
+			var newpkg *packages.Package
+			for _, pkg := range newpkgs {
+				if pkg.PkgPath == pkgpath {
+					newpkg = pkg
+					break
+				}
+			}
+			if newpkg == nil {
+				fmt.Printf("package %s - deleted\n", pkgpath)
+				continue
+			}
+			oldpkg, err := packages.LoadPackage(dir, pkgpath)
+			if err != nil {
+				fmt.Printf("package %s - %v\n", pkgpath, err)
+				continue
+			}
+			report := apidiff.Changes(oldpkg.Types, newpkg.Types)
+			if len(report.Changes) > 0 {
+				fmt.Printf("package %s: diff\n", pkgpath)
+				if err := report.Text(os.Stdout); err != nil {
+					fmt.Printf("package %s - %v\n", pkgpath, err)
+					continue
+				}
+			}
+		}
 	}
 	return nil
 }

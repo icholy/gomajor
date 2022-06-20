@@ -9,6 +9,7 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+	"golang.org/x/tools/go/packages"
 )
 
 // ModPrefix returns the module path with no SIV
@@ -150,4 +151,46 @@ func IsInternal(pkgpath string) bool {
 		return true
 	}
 	return false
+}
+
+type Package = packages.Package
+
+// LoadModulePackages packages in a module.
+func LoadModulePackages(dir string, mod module.Version) ([]*Package, error) {
+	cfg := &packages.Config{
+		Dir:  dir,
+		Mode: packages.LoadTypes | packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedDeps,
+	}
+	pkgs, err := packages.Load(cfg, fmt.Sprintf("%s...", mod.Path))
+	if err != nil {
+		return nil, err
+	}
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("found no packages for %s", mod)
+	}
+	for _, pkg := range pkgs {
+		if len(pkg.Errors) != 0 {
+			return nil, pkg.Errors[0]
+		}
+	}
+	return pkgs, nil
+}
+
+// LoadPackage loads a single package
+func LoadPackage(dir, pkgpath string) (*Package, error) {
+	cfg := &packages.Config{
+		Dir:  dir,
+		Mode: packages.LoadTypes | packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedDeps,
+	}
+	pkgs, err := packages.Load(cfg, pkgpath)
+	if err != nil {
+		return nil, err
+	}
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("found no packages for %s", pkgpath)
+	}
+	if len(pkgs[0].Errors) != 0 {
+		return nil, pkgs[0].Errors[0]
+	}
+	return pkgs[0], nil
 }
