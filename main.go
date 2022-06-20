@@ -259,7 +259,7 @@ func diffcmd(args []string) error {
 		return err
 	}
 	// load all package type info for for resolved version.
-	fmt.Printf("downloading: %s\n", spec)
+	fmt.Printf("loading: %s\n", spec)
 	newpkgs, err := packages.LoadModulePackages(spec.Module())
 	if err != nil {
 		return fmt.Errorf("failed to load type information: %s: %v", spec, err)
