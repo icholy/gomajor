@@ -285,15 +285,17 @@ func diffcmd(args []string) error {
 			continue
 		}
 		// find the corresponding package in the temp module
+		_, pkgdir, _ := packages.SplitPath(spec.ModPrefix, pkgpath)
+		newpkgpath := packages.JoinPath(spec.ModPrefix, spec.Version, pkgdir)
 		var newpkg *packages.Package
 		for _, pkg := range newpkgs {
-			if pkg.PkgPath == pkgpath {
+			if pkg.PkgPath == newpkgpath {
 				newpkg = pkg
 				break
 			}
 		}
 		if newpkg == nil {
-			fmt.Printf("package %s: does not exist in %s\n", pkgpath, spec.Version)
+			fmt.Printf("package %s: does not exist in %s\n", newpkgpath, spec.Version)
 			continue
 		}
 		// load the local package type info
