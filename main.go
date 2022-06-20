@@ -257,10 +257,10 @@ func diffcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	// load all packages in the resolved version
+	// load all package type info for for resolved version.
 	newpkgs, err := packages.LoadModulePackages(spec.Module())
 	if err != nil {
-		return fmt.Errorf("packages.LoadModulePackages: %v", err)
+		return fmt.Errorf("failed to load type information: %s: %v", spec, err)
 	}
 	// find the related corresponding local modules
 	index, err := packages.LoadIndex(dir)
@@ -271,35 +271,45 @@ func diffcmd(args []string) error {
 	// we only want to diff against packages that we're actually using
 	pkgpaths, err := importpaths.List(dir)
 	if err != nil {
-		return fmt.Errorf("importpaths.List: %v", err)
+		return fmt.Errorf("failed to enumerate local imports: %v", err)
 	}
 	for _, pkgpath := range pkgpaths {
-		// find the corresponding module
-		if mod, ok := index.Lookup(pkgpath); ok && slices.Contains(related, mod) {
-			// find the corresponding package in the temp module
-			var newpkg *packages.Package
-			for _, pkg := range newpkgs {
-				if pkg.PkgPath == pkgpath {
-					newpkg = pkg
-					break
-				}
+		mod, ok := index.Lookup(pkgpath)
+		// check if it belongs to the module we're looking for
+		if !ok || !slices.Contains(related, mod) {
+			continue
+		}
+		// find the corresponding package in the temp module
+		var newpkg *packages.Package
+		for _, pkg := range newpkgs {
+			if pkg.PkgPath == pkgpath {
+				newpkg = pkg
+				break
 			}
-			if newpkg == nil {
-				fmt.Printf("package %s - deleted\n", pkgpath)
-				continue
+		}
+		if newpkg == nil {
+			fmt.Printf("package %s: deleted\n", pkgpath)
+			continue
+		}
+		// load the local package type info
+		oldpkg, err := packages.LoadPackage(dir, pkgpath)
+		if err != nil {
+			fmt.Printf("package %s: error %v\n", pkgpath, err)
+			continue
+		}
+		// diff it
+		report := apidiff.Changes(oldpkg.Types, newpkg.Types)
+		incompatible := false
+		for _, ch := range report.Changes {
+			if !ch.Compatible {
+				incompatible = true
+				break
 			}
-			oldpkg, err := packages.LoadPackage(dir, pkgpath)
-			if err != nil {
-				fmt.Printf("package %s - %v\n", pkgpath, err)
-				continue
-			}
-			report := apidiff.Changes(oldpkg.Types, newpkg.Types)
-			if len(report.Changes) > 0 {
-				fmt.Printf("package %s: diff\n", pkgpath)
-				if err := report.Text(os.Stdout); err != nil {
-					fmt.Printf("package %s - %v\n", pkgpath, err)
-					continue
-				}
+		}
+		if incompatible {
+			fmt.Printf("package %s:\n", pkgpath)
+			if err := report.TextIncompatible(os.Stdout, false); err != nil {
+				return err
 			}
 		}
 	}
