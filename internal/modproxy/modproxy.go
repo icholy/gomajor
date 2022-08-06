@@ -100,7 +100,7 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(res.Body)
-		if res.StatusCode == http.StatusGone && bytes.HasPrefix(body, []byte("not found:")) {
+		if res.StatusCode == http.StatusNotFound && bytes.HasPrefix(body, []byte("not found:")) {
 			return nil, false, nil
 		}
 		msg := string(body)
