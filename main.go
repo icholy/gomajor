@@ -11,6 +11,7 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
@@ -76,25 +77,35 @@ func listcmd(args []string) error {
 		return err
 	}
 	private := os.Getenv("GOPRIVATE")
+	var group errgroup.Group
+	if cached {
+		group.SetLimit(3)
+	} else {
+		group.SetLimit(1)
+	}
 	for _, dep := range dependencies {
+		dep := dep
 		if module.MatchPrefixPatterns(private, dep.Path) {
 			continue
 		}
-		mod, err := modproxy.Latest(dep.Path, cached)
-		if err != nil {
-			fmt.Printf("%s: failed: %v\n", dep.Path, err)
-			continue
-		}
-		v := mod.MaxVersion("", pre)
-		if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
-			continue
-		}
-		if semver.Compare(v, dep.Version) <= 0 {
-			continue
-		}
-		fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
+		group.Go(func() error {
+			mod, err := modproxy.Latest(dep.Path, cached)
+			if err != nil {
+				fmt.Printf("%s: failed: %v\n", dep.Path, err)
+				return nil
+			}
+			v := mod.MaxVersion("", pre)
+			if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
+				return nil
+			}
+			if semver.Compare(v, dep.Version) <= 0 {
+				return nil
+			}
+			fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
+			return nil
+		})
 	}
-	return nil
+	return group.Wait()
 }
 
 func getcmd(args []string) error {
