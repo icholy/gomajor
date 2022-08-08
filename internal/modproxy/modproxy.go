@@ -90,6 +90,7 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	req.Header.Set("User-Agent", "GoMajor/1.0")
 	if cached {
 		req.Header.Set("Disable-Module-Fetch", "true")
 	}
