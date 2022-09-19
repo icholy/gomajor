@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"golang.org/x/mod/modfile"
@@ -133,5 +134,8 @@ func Direct(dir string) ([]module.Version, error) {
 			mods = append(mods, req.Mod)
 		}
 	}
+	sort.Slice(mods, func(i, j int) bool {
+		return mods[i].Path < mods[j].Path
+	})
 	return mods, nil
 }
