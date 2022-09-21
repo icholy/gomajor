@@ -69,3 +69,4 @@ cluster.go:16:2 goredis.io/internal/hashtag
 * If you have multiple major versions imported, **ALL** of them will be rewritten.
 * The latest version will not be found if there are **gaps** between major version numbers.
 * The `path` command does not rewrite package names.
+* Modules matching `GOPRIVATE` are skipped.
