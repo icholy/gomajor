@@ -91,7 +91,7 @@ func listcmd(args []string) error {
 		group.Go(func() error {
 			mod, err := modproxy.Latest(dep.Path, cached)
 			if err != nil {
-				fmt.Printf("%s: failed: %v\n", dep.Path, err)
+				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", dep.Path, err)
 				return nil
 			}
 			v := mod.MaxVersion("", pre)
