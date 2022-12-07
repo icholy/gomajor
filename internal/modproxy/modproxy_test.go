@@ -104,7 +104,7 @@ func TestModule(t *testing.T) {
 				},
 			},
 			max:      "v0.3.0",
-			nextpath: "golang.org/x/mod/v2",
+			nextpath: "",
 		},
 		{
 			mod: &Module{
@@ -165,7 +165,7 @@ func TestModule(t *testing.T) {
 				},
 			},
 			max:      "v0.24.0",
-			nextpath: "github.com/libp2p/go-libp2p/v2",
+			nextpath: "",
 		},
 	}
 	for _, tt := range tests {
