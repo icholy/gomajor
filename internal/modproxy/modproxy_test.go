@@ -1,6 +1,7 @@
 package modproxy
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -133,6 +134,28 @@ func TestModule(t *testing.T) {
 					t.Fatalf("wrong next path: want %q, got %q", tt.nextpath, nextpath)
 				}
 			})
+		})
+	}
+}
+
+func TestMaxVersion(t *testing.T) {
+	tests := []struct {
+		lo, hi string
+	}{
+		{"v0.0.0", "v0.0.1"},
+		{"v0.2.0", "v1.0.0"},
+		{"v3.0.0+incompatible", "v0.0.1"},
+		{"v3.0.0+incompatible", "v5.0.1+incompatible"},
+	}
+	for _, tt := range tests {
+		name := fmt.Sprintf("%s < %s", tt.lo, tt.hi)
+		t.Run(name, func(t *testing.T) {
+			if got := MaxVersion(tt.lo, tt.hi); got != tt.hi {
+				t.Fatalf("MaxVersion(%q, %q) = %q", tt.lo, tt.hi, got)
+			}
+			if got := MaxVersion(tt.hi, tt.lo); got != tt.hi {
+				t.Fatalf("MaxVersion(%q, %q) = %q", tt.hi, tt.lo, got)
+			}
 		})
 	}
 }
