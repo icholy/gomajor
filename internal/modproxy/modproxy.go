@@ -44,15 +44,29 @@ func (m *Module) MaxVersion(prefix string, pre bool) string {
 // semantic version precedence. Incompatible versions are considered
 // lower than non-incompatible ones.
 func MaxVersion(v, w string) string {
-	incompatibleV := strings.HasSuffix(semver.Build(v), "+incompatible")
-	incompatibleW := strings.HasSuffix(semver.Build(w), "+incompatible")
-	if incompatibleV == incompatibleW {
-		if semver.Compare(v, w) == 1 {
+	// sort by validity
+	vValid := semver.IsValid(v)
+	wValid := semver.IsValid(w)
+	if !vValid && !wValid {
+		return ""
+	}
+	if vValid != wValid {
+		if vValid {
 			return v
 		}
 		return w
 	}
-	if incompatibleW {
+	// sort by compatibility
+	vIncompatible := strings.HasSuffix(semver.Build(v), "+incompatible")
+	wIncompatible := strings.HasSuffix(semver.Build(w), "+incompatible")
+	if vIncompatible != wIncompatible {
+		if wIncompatible {
+			return v
+		}
+		return w
+	}
+	// sort by semver
+	if semver.Compare(v, w) == 1 {
 		return v
 	}
 	return w

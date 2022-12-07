@@ -146,6 +146,7 @@ func TestMaxVersion(t *testing.T) {
 		{"v0.2.0", "v1.0.0"},
 		{"v3.0.0+incompatible", "v0.0.1"},
 		{"v3.0.0+incompatible", "v5.0.1+incompatible"},
+		{"", "v6.14.1+incompatible"},
 	}
 	for _, tt := range tests {
 		name := fmt.Sprintf("%s < %s", tt.lo, tt.hi)
