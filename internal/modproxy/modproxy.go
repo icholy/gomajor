@@ -35,14 +35,42 @@ func (m *Module) MaxVersion(prefix string, pre bool) string {
 		if !pre && semver.Prerelease(v) != "" {
 			continue
 		}
-		if max == "" {
-			max = v
-		}
-		if semver.Compare(v, max) == 1 {
-			max = v
-		}
+		max = MaxVersion(v, max)
 	}
 	return max
+}
+
+// MaxVersion returns the larger of two versions according to semantic version precedence.
+// Incompatible versions are considered lower than non-incompatible ones.
+// Invalid versions are considered lower than valid ones.
+// If both versions are invalid, the empty string is returned.
+func MaxVersion(v, w string) string {
+	// sort by validity
+	vValid := semver.IsValid(v)
+	wValid := semver.IsValid(w)
+	if !vValid && !wValid {
+		return ""
+	}
+	if vValid != wValid {
+		if vValid {
+			return v
+		}
+		return w
+	}
+	// sort by compatibility
+	vIncompatible := strings.HasSuffix(semver.Build(v), "+incompatible")
+	wIncompatible := strings.HasSuffix(semver.Build(w), "+incompatible")
+	if vIncompatible != wIncompatible {
+		if wIncompatible {
+			return v
+		}
+		return w
+	}
+	// sort by semver
+	if semver.Compare(v, w) == 1 {
+		return v
+	}
+	return w
 }
 
 // NextMajor returns the next major version after the provided version
