@@ -145,12 +145,6 @@ func getcmd(args []string) error {
 		}
 		version = latest.MaxVersion("", pre)
 		query = version
-	case "master", "default":
-		latest, err := modproxy.Latest(mod.Path, cached)
-		if err != nil {
-			return err
-		}
-		version = latest.MaxVersion("", pre)
 	default:
 		if !semver.IsValid(query) {
 			return fmt.Errorf("invalid version: %s", query)
