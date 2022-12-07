@@ -40,9 +40,10 @@ func (m *Module) MaxVersion(prefix string, pre bool) string {
 	return max
 }
 
-// MaxVersion returns the larger of two versions according to
-// semantic version precedence. Incompatible versions are considered
-// lower than non-incompatible ones.
+// MaxVersion returns the larger of two versions according to semantic version precedence.
+// Incompatible versions are considered lower than non-incompatible ones.
+// Invalid versions are considered lower than valid ones.
+// If both versions are invalid, the empty string is returned.
 func MaxVersion(v, w string) string {
 	// sort by validity
 	vValid := semver.IsValid(v)
