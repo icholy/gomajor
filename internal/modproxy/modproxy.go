@@ -96,7 +96,7 @@ func (m *Module) NextMajorPath() (string, bool) {
 		return "", false
 	}
 	if semver.Major(latest) == "v0" {
-		latest = "v1"
+		return m.WithMajorPath("v2"), true
 	}
 	next, err := NextMajor(latest)
 	if err != nil {
