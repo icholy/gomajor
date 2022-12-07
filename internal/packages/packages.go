@@ -106,12 +106,12 @@ func FindModFile(dir string) (string, error) {
 		if !os.IsNotExist(err) {
 			return "", err
 		}
-		if dir == "" || dir == "." || dir == "/" {
-			break
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("cannot find go.mod")
 		}
-		dir = filepath.Dir(dir)
+		dir = parent
 	}
-	return "", fmt.Errorf("cannot find go.mod")
 }
 
 // Direct returns a list of all modules that are direct dependencies
