@@ -61,12 +61,12 @@ func main() {
 
 func listcmd(args []string) error {
 	var dir string
-	var opt modupdates.Options
+	var pre, cached, major bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
 	fset.StringVar(&dir, "dir", ".", "working directory")
-	fset.BoolVar(&opt.Pre, "pre", false, "allow non-v0 prerelease versions")
-	fset.BoolVar(&opt.Cached, "cached", true, "only fetch cached content from the module proxy")
-	fset.BoolVar(&opt.Major, "major", false, "only show newer major versions")
+	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor list")
 		fset.PrintDefaults()
@@ -76,25 +76,29 @@ func listcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	opt.Modules = dependencies
-	opt.OnErr = func(m module.Version, err error) {
-		fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
-	}
-	opt.OnUpdate = func(m module.Version, latest string) {
-		fmt.Printf("%s: %s [latest %v]\n", u.Module.Path, u.Module.Version, u.Latest)
-	}
-	modupdates.Do(opt)
+	modupdates.Do(modupdates.Options{
+		Pre:     pre,
+		Cached:  cached,
+		Major:   major,
+		Modules: dependencies,
+		OnErr: func(m module.Version, err error) {
+			fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
+		},
+		OnUpdate: func(m module.Version, latest string) {
+			fmt.Printf("%s: %s [latest %v]\n", m.Path, m.Version, latest)
+		},
+	})
 	return nil
 }
 
 func updatecmd(args []string) error {
 	var dir string
-	var opt modupdates.Options
+	var pre, cached, major bool
 	fset := flag.NewFlagSet("update", flag.ExitOnError)
 	fset.StringVar(&dir, "dir", ".", "working directory")
-	fset.BoolVar(&opt.Pre, "pre", false, "allow non-v0 prerelease versions")
-	fset.BoolVar(&opt.Cached, "cached", true, "only fetch cached content from the module proxy")
-	fset.BoolVar(&opt.Major, "major", false, "only show newer major versions")
+	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor update")
 		fset.PrintDefaults()
@@ -104,21 +108,25 @@ func updatecmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	opt.Modules = dependencies
-	opt.OnErr = func(m module.Version, err error) {
-		fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
-	}
-	opt.OnUpdate = func(m module.Version, latest string) {
-		modprefix := packages.ModPrefix(m.Path)
-		spec := fmt.Sprintf("%s@%s", packages.JoinPath(modprefix, latest, ""), latest)
-		if err := GoGet(dir, spec); err != nil {
-			return
-		}
-		if err := importpaths.RewriteModuleVersion(dir, m.Path, "", latest); err != nil {
-			fmt.Fprintf(os.Stderr, "%s: rewrite: %v\n", m.Path, err)
-		}
-	}
-	modupdates.Do(opt)
+	modupdates.Do(modupdates.Options{
+		Cached:  cached,
+		Pre:     pre,
+		Major:   major,
+		Modules: dependencies,
+		OnErr: func(m module.Version, err error) {
+			fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
+		},
+		OnUpdate: func(m module.Version, latest string) {
+			modprefix := packages.ModPrefix(m.Path)
+			spec := fmt.Sprintf("%s@%s", packages.JoinPath(modprefix, latest, ""), latest)
+			if err := GoGet(dir, spec); err != nil {
+				return
+			}
+			if err := importpaths.RewriteModuleVersion(dir, m.Path, "", latest); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: rewrite: %v\n", m.Path, err)
+			}
+		},
+	})
 	return nil
 }
 
