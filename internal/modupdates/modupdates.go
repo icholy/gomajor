@@ -10,20 +10,22 @@ import (
 )
 
 type Options struct {
-	Pre     bool
-	Cached  bool
-	Major   bool
-	Modules []module.Version
-	OnErr   func(module.Version, error)
+	Pre      bool
+	Cached   bool
+	Major    bool
+	Modules  []module.Version
+	OnErr    func(module.Version, error)
+	OnUpdate func(module.Version, string)
 }
 
-type Update struct {
+type update struct {
 	Latest string
 	Module module.Version
+	Err    error
 }
 
-func List(opt Options) chan Update {
-	ch := make(chan Update)
+func Do(opt Options) {
+	ch := make(chan update)
 	go func() {
 		private := os.Getenv("GOPRIVATE")
 		var group errgroup.Group
@@ -40,9 +42,7 @@ func List(opt Options) chan Update {
 			group.Go(func() error {
 				mod, err := modproxy.Latest(m.Path, opt.Cached)
 				if err != nil {
-					if opt.OnErr != nil {
-						opt.OnErr(m, err)
-					}
+					ch <- update{Err: err, Module: m}
 					return nil
 				}
 				v := mod.MaxVersion("", opt.Pre)
@@ -52,12 +52,22 @@ func List(opt Options) chan Update {
 				if semver.Compare(v, m.Version) <= 0 {
 					return nil
 				}
-				ch <- Update{Latest: v, Module: m}
+				ch <- update{Latest: v, Module: m}
 				return nil
 			})
 		}
 		group.Wait()
 		close(ch)
 	}()
-	return ch
+	for u := range ch {
+		if u.Err != nil {
+			if opt.OnErr != nil {
+				opt.OnErr(u.Module, u.Err)
+			}
+		} else {
+			if opt.OnUpdate != nil {
+				opt.OnUpdate(u.Module, u.Latest)
+			}
+		}
+	}
 }

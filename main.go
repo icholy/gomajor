@@ -80,9 +80,10 @@ func listcmd(args []string) error {
 	opt.OnErr = func(m module.Version, err error) {
 		fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
 	}
-	for u := range modupdates.List(opt) {
+	opt.OnUpdate = func(m module.Version, latest string) {
 		fmt.Printf("%s: %s [latest %v]\n", u.Module.Path, u.Module.Version, u.Latest)
 	}
+	modupdates.Do(opt)
 	return nil
 }
 
@@ -107,17 +108,17 @@ func updatecmd(args []string) error {
 	opt.OnErr = func(m module.Version, err error) {
 		fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
 	}
-	for u := range modupdates.List(opt) {
-		modprefix := packages.ModPrefix(u.Module.Path)
-		spec := fmt.Sprintf("%s@%s", packages.JoinPath(modprefix, u.Latest, ""), u.Latest)
+	opt.OnUpdate = func(m module.Version, latest string) {
+		modprefix := packages.ModPrefix(m.Path)
+		spec := fmt.Sprintf("%s@%s", packages.JoinPath(modprefix, latest, ""), latest)
 		if err := GoGet(dir, spec); err != nil {
-			continue
+			return
 		}
-		if err := importpaths.RewriteModuleVersion(dir, u.Module.Path, "", u.Latest); err != nil {
-			fmt.Fprintf(os.Stderr, "%s: rewrite: %v\n", u.Module.Path, err)
-			continue
+		if err := importpaths.RewriteModuleVersion(dir, m.Path, "", latest); err != nil {
+			fmt.Fprintf(os.Stderr, "%s: rewrite: %v\n", m.Path, err)
 		}
 	}
+	modupdates.Do(opt)
 	return nil
 }
 
