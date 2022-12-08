@@ -11,10 +11,10 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
+	"github.com/icholy/gomajor/internal/modupdates"
 	"github.com/icholy/gomajor/internal/packages"
 )
 
@@ -38,35 +38,35 @@ func main() {
 		fmt.Println(help)
 	}
 	flag.Parse()
+	var cmd func([]string) error
 	switch flag.Arg(0) {
 	case "get":
-		if err := getcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
-		}
+		cmd = getcmd
 	case "list":
-		if err := listcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
-		}
+		cmd = listcmd
+	case "update":
+		cmd = updatecmd
 	case "path":
-		if err := pathcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
-		}
+		cmd = pathcmd
 	case "help", "":
 		flag.Usage()
 	default:
 		fmt.Fprintf(os.Stderr, "unrecognized subcommand: %s\n", flag.Arg(0))
 		flag.Usage()
 	}
+	if err := cmd(flag.Args()[1:]); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func listcmd(args []string) error {
 	var dir string
-	var pre, cached, major bool
+	var opt modupdates.Options
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
-	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
-	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
-	fset.BoolVar(&major, "major", false, "only show newer major versions")
+	fset.BoolVar(&opt.Pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.BoolVar(&opt.Cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.BoolVar(&opt.Major, "major", false, "only show newer major versions")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor list")
 		fset.PrintDefaults()
@@ -76,36 +76,49 @@ func listcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	private := os.Getenv("GOPRIVATE")
-	var group errgroup.Group
-	if cached {
-		group.SetLimit(3)
-	} else {
-		group.SetLimit(1)
+	opt.Modules = dependencies
+	opt.OnErr = func(m module.Version, err error) {
+		fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
 	}
-	for _, dep := range dependencies {
-		dep := dep
-		if module.MatchPrefixPatterns(private, dep.Path) {
+	for u := range modupdates.List(opt) {
+		fmt.Printf("%s: %s [latest %v]\n", u.Module.Path, u.Module.Version, u.Latest)
+	}
+	return nil
+}
+
+func updatecmd(args []string) error {
+	var dir string
+	var opt modupdates.Options
+	fset := flag.NewFlagSet("update", flag.ExitOnError)
+	fset.StringVar(&dir, "dir", ".", "working directory")
+	fset.BoolVar(&opt.Pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.BoolVar(&opt.Cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.BoolVar(&opt.Major, "major", false, "only show newer major versions")
+	fset.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: gomajor update")
+		fset.PrintDefaults()
+	}
+	fset.Parse(args)
+	dependencies, err := packages.Direct(dir)
+	if err != nil {
+		return err
+	}
+	opt.Modules = dependencies
+	opt.OnErr = func(m module.Version, err error) {
+		fmt.Fprintf(os.Stderr, "%s: failed: %v\n", m.Path, err)
+	}
+	for u := range modupdates.List(opt) {
+		modprefix := packages.ModPrefix(u.Module.Path)
+		spec := fmt.Sprintf("%s@%s", packages.JoinPath(modprefix, u.Latest, ""), u.Latest)
+		if err := GoGet(dir, spec); err != nil {
 			continue
 		}
-		group.Go(func() error {
-			mod, err := modproxy.Latest(dep.Path, cached)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", dep.Path, err)
-				return nil
-			}
-			v := mod.MaxVersion("", pre)
-			if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
-				return nil
-			}
-			if semver.Compare(v, dep.Version) <= 0 {
-				return nil
-			}
-			fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
-			return nil
-		})
+		if err := RewriteModule(dir, u.Module.Path, "", u.Latest); err != nil {
+			fmt.Fprintf(os.Stderr, "%s: rewrite: %v\n", u.Module.Path, err)
+			continue
+		}
 	}
-	return group.Wait()
+	return nil
 }
 
 func getcmd(args []string) error {
@@ -131,8 +144,6 @@ func getcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	modprefix := packages.ModPrefix(mod.Path)
-	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	// figure out what version to get
 	var version string
 	switch query {
@@ -158,16 +169,13 @@ func getcmd(args []string) error {
 	}
 	// go get
 	if goget {
+		modprefix := packages.ModPrefix(mod.Path)
+		_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 		spec := packages.JoinPath(modprefix, version, pkgdir)
 		if query != "" {
 			spec += "@" + query
 		}
-		fmt.Println("go get", spec)
-		cmd := exec.Command("go", "get", spec)
-		cmd.Dir = dir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
+		if err := GoGet(dir, spec); err != nil {
 			return err
 		}
 	}
@@ -175,6 +183,21 @@ func getcmd(args []string) error {
 	if !rewrite {
 		return nil
 	}
+	return RewriteModule(dir, mod.Path, pkgpath, version)
+}
+
+func GoGet(dir, spec string) error {
+	fmt.Println("go get", spec)
+	cmd := exec.Command("go", "get", spec)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func RewriteModule(dir, modpath, pkgpath, version string) error {
+	modprefix := packages.ModPrefix(modpath)
+	_, pkgdir, _ := packages.SplitPath(modprefix, pkgpath)
 	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
 		_, pkgdir0, ok := packages.SplitPath(modprefix, path)
 		if !ok {
