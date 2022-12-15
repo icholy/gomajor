@@ -27,7 +27,6 @@ The commands are:
 
     get     upgrade to a major version
     list    list available updates
-    update  upgrade all modules
     path    modify the module path
     help    show this help text
 `
@@ -44,10 +43,6 @@ func main() {
 		}
 	case "list":
 		if err := listcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
-		}
-	case "update":
-		if err := updatecmd(flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	case "path":
@@ -97,9 +92,10 @@ func listcmd(args []string) error {
 
 func getcmd(args []string) error {
 	var dir string
-	var pre, cached bool
+	var pre, cached, major bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
+	fset.BoolVar(&major, "major", false, "only get newer major versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.Usage = func() {
@@ -109,6 +105,48 @@ func getcmd(args []string) error {
 	fset.Parse(args)
 	if fset.NArg() != 1 {
 		return fmt.Errorf("missing package spec")
+	}
+	// check for "all" special case
+	if fset.Arg(0) == "all" {
+		dependencies, err := packages.Direct(dir)
+		if err != nil {
+			return err
+		}
+		modproxy.Updates(modproxy.UpdateOptions{
+			Pre:     pre,
+			Major:   major,
+			Cached:  cached,
+			Modules: dependencies,
+			OnUpdate: func(u modproxy.Update) {
+				if u.Err != nil {
+					fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
+					return
+				}
+				// go get
+				modprefix := packages.ModPrefix(u.Module.Path)
+				spec := packages.JoinPath(modprefix, u.Version, "") + "@" + u.Version
+				fmt.Println("go get", spec)
+				cmd := exec.Command("go", "get", spec)
+				cmd.Dir = dir
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				if err := cmd.Run(); err != nil {
+					return
+				}
+				// rewrite import paths
+				err := importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
+					Prefix:     modprefix,
+					NewVersion: u.Version,
+					OnRewrite: func(pos token.Position, _, newpath string) {
+						fmt.Printf("%s %s\n", pos, newpath)
+					},
+				})
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "rewrite failed: %v", err)
+				}
+			},
+		})
+		return nil
 	}
 	// split the package spec into its components
 	pkgpath, query := packages.SplitSpec(fset.Arg(0))
@@ -163,60 +201,6 @@ func getcmd(args []string) error {
 			fmt.Printf("%s %s\n", pos, newpath)
 		},
 	})
-}
-
-func updatecmd(args []string) error {
-	var dir string
-	var pre, cached, major bool
-	fset := flag.NewFlagSet("update", flag.ExitOnError)
-	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
-	fset.StringVar(&dir, "dir", ".", "working directory")
-	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
-	fset.BoolVar(&major, "major", false, "only show newer major versions")
-	fset.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: gomajor update")
-		fset.PrintDefaults()
-	}
-	fset.Parse(args)
-	dependencies, err := packages.Direct(dir)
-	if err != nil {
-		return err
-	}
-	modproxy.Updates(modproxy.UpdateOptions{
-		Pre:     pre,
-		Major:   major,
-		Cached:  cached,
-		Modules: dependencies,
-		OnUpdate: func(u modproxy.Update) {
-			if u.Err != nil {
-				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
-				return
-			}
-			// go get
-			modprefix := packages.ModPrefix(u.Module.Path)
-			spec := packages.JoinPath(modprefix, u.Version, "") + "@" + u.Version
-			fmt.Println("go get", spec)
-			cmd := exec.Command("go", "get", spec)
-			cmd.Dir = dir
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				return
-			}
-			// rewrite import paths
-			err := importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
-				Prefix:     modprefix,
-				NewVersion: u.Version,
-				OnRewrite: func(pos token.Position, _, newpath string) {
-					fmt.Printf("%s %s\n", pos, newpath)
-				},
-			})
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "rewrite failed: %v", err)
-			}
-		},
-	})
-	return nil
 }
 
 func pathcmd(args []string) error {
