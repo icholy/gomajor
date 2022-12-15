@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/icholy/gomajor/internal/packages"
 )
 
 // ErrSkip is used to signal that an import should be skipped
@@ -156,4 +158,39 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 	}
 	// rename the .temp to .go
 	return os.Rename(temp, name)
+}
+
+// RewriteModuleOptions contains options for rewriting a module's imports.
+type RewriteModuleOptions struct {
+	Prefix     string
+	NewVersion string
+	NewPrefix  string
+	PkgDir     string
+	OnRewrite  func(pos token.Position, oldpath, newpath string)
+}
+
+// RewriteModule rewrites imports of a specific module to a new version or prefix.
+// If a package directory is provided, only imports of that package will be rewritten.
+func RewriteModule(dir string, opt RewriteModuleOptions) error {
+	modprefix := opt.Prefix
+	if opt.NewPrefix != "" {
+		modprefix = opt.NewPrefix
+	}
+	return Rewrite(dir, func(pos token.Position, path string) (string, error) {
+		_, pkgdir, ok := packages.SplitPath(opt.Prefix, path)
+		if !ok {
+			return "", ErrSkip
+		}
+		if opt.PkgDir != "" && opt.PkgDir != pkgdir {
+			return "", ErrSkip
+		}
+		newpath := packages.JoinPath(modprefix, opt.NewVersion, pkgdir)
+		if newpath == path {
+			return "", ErrSkip
+		}
+		if opt.OnRewrite != nil {
+			opt.OnRewrite(pos, path, newpath)
+		}
+		return newpath, nil
+	})
 }

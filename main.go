@@ -175,20 +175,13 @@ func getcmd(args []string) error {
 	if !rewrite {
 		return nil
 	}
-	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
-		_, pkgdir0, ok := packages.SplitPath(modprefix, path)
-		if !ok {
-			return "", importpaths.ErrSkip
-		}
-		if pkgdir != "" && pkgdir != pkgdir0 {
-			return "", importpaths.ErrSkip
-		}
-		newpath := packages.JoinPath(modprefix, version, pkgdir0)
-		if newpath == path {
-			return "", importpaths.ErrSkip
-		}
-		fmt.Printf("%s %s\n", pos, newpath)
-		return newpath, nil
+	return importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
+		PkgDir:     pkgdir,
+		Prefix:     modprefix,
+		NewVersion: version,
+		OnRewrite: func(pos token.Position, _, newpath string) {
+			fmt.Printf("%s %s\n", pos, newpath)
+		},
 	})
 }
 
@@ -257,16 +250,12 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// rewrite import paths
-	return importpaths.Rewrite(dir, func(pos token.Position, path string) (string, error) {
-		_, pkgdir, ok := packages.SplitPath(oldmodprefix, path)
-		if !ok {
-			return "", importpaths.ErrSkip
-		}
-		newpath := packages.JoinPath(modprefix, version, pkgdir)
-		if newpath == path {
-			return "", importpaths.ErrSkip
-		}
-		fmt.Printf("%s %s\n", pos, newpath)
-		return newpath, nil
+	return importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
+		Prefix:     oldmodprefix,
+		NewVersion: version,
+		NewPrefix:  modprefix,
+		OnRewrite: func(pos token.Position, _, newpath string) {
+			fmt.Printf("%s %s\n", pos, newpath)
+		},
 	})
 }
