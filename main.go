@@ -92,10 +92,9 @@ func listcmd(args []string) error {
 
 func getcmd(args []string) error {
 	var dir string
-	var rewrite, goget, pre, cached bool
+	var goget, pre, cached bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
-	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
@@ -154,9 +153,6 @@ func getcmd(args []string) error {
 		}
 	}
 	// rewrite imports
-	if !rewrite {
-		return nil
-	}
 	return importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 		PkgDir:     pkgdir,
 		Prefix:     modprefix,
@@ -169,11 +165,10 @@ func getcmd(args []string) error {
 
 func pathcmd(args []string) error {
 	var dir, version string
-	var next, rewrite bool
+	var next bool
 	fset := flag.NewFlagSet("path", flag.ExitOnError)
 	fset.BoolVar(&next, "next", false, "increment the module path version")
 	fset.StringVar(&version, "version", "", "set the module path version")
-	fset.BoolVar(&rewrite, "rewrite", true, "rewrite import paths")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor path [modpath]")
@@ -221,9 +216,6 @@ func pathcmd(args []string) error {
 	oldmodprefix := packages.ModPrefix(file.Module.Mod.Path)
 	modpath = packages.JoinPath(modprefix, version, "")
 	fmt.Printf("module %s\n", modpath)
-	if !rewrite {
-		return nil
-	}
 	// update go.mod
 	cmd := exec.Command("go", "mod", "edit", "-module", modpath)
 	cmd.Stdout = os.Stdout
