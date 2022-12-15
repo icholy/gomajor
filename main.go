@@ -95,13 +95,9 @@ func listcmd(args []string) error {
 				return nil
 			}
 			v := mod.MaxVersion("", pre)
-			if major && semver.Compare(semver.Major(v), semver.Major(dep.Version)) <= 0 {
-				return nil
+			if modproxy.IsNewerVersion(dep.Version, v, major) {
+				fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
 			}
-			if semver.Compare(v, dep.Version) <= 0 {
-				return nil
-			}
-			fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
 			return nil
 		})
 	}

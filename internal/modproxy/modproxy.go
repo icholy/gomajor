@@ -40,6 +40,15 @@ func (m *Module) MaxVersion(prefix string, pre bool) string {
 	return max
 }
 
+// IsNewerVersion returns true if newversion is greater than oldversion in terms of semver.
+// If major is true, then newversion must be a major version ahead of oldversion to be considered newer.
+func IsNewerVersion(oldversion, newversion string, major bool) bool {
+	if major {
+		return semver.Compare(semver.Major(oldversion), semver.Major(newversion)) < 0
+	}
+	return semver.Compare(oldversion, newversion) < 0
+}
+
 // MaxVersion returns the larger of two versions according to semantic version precedence.
 // Incompatible versions are considered lower than non-incompatible ones.
 // Invalid versions are considered lower than valid ones.
