@@ -33,6 +33,8 @@ foo.go:4:2 github.com/go-redis/redis/v8
 bar.go:5:2 github.com/go-redis/redis/v8
 ```
 
+**Note:** Use `gomajor get all` to update all modules.
+
 ### Increment Module Path Version
 
 ```
