@@ -92,10 +92,9 @@ func listcmd(args []string) error {
 
 func getcmd(args []string) error {
 	var dir string
-	var goget, pre, cached bool
+	var pre, cached bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
-	fset.BoolVar(&goget, "get", true, "run go get")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.Usage = func() {
@@ -138,19 +137,17 @@ func getcmd(args []string) error {
 		}
 	}
 	// go get
-	if goget {
-		spec := packages.JoinPath(modprefix, version, pkgdir)
-		if query != "" {
-			spec += "@" + query
-		}
-		fmt.Println("go get", spec)
-		cmd := exec.Command("go", "get", spec)
-		cmd.Dir = dir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return err
-		}
+	spec := packages.JoinPath(modprefix, version, pkgdir)
+	if query != "" {
+		spec += "@" + query
+	}
+	fmt.Println("go get", spec)
+	cmd := exec.Command("go", "get", spec)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 	// rewrite imports
 	return importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
