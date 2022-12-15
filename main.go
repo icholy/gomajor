@@ -9,9 +9,7 @@ import (
 	"os/exec"
 
 	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/icholy/gomajor/internal/importpaths"
 	"github.com/icholy/gomajor/internal/modproxy"
@@ -76,32 +74,20 @@ func listcmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	private := os.Getenv("GOPRIVATE")
-	var group errgroup.Group
-	if cached {
-		group.SetLimit(3)
-	} else {
-		group.SetLimit(1)
-	}
-	for _, dep := range dependencies {
-		dep := dep
-		if module.MatchPrefixPatterns(private, dep.Path) {
-			continue
-		}
-		group.Go(func() error {
-			mod, err := modproxy.Latest(dep.Path, cached)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", dep.Path, err)
-				return nil
+	modproxy.Updates(modproxy.UpdateOptions{
+		Pre:     pre,
+		Major:   major,
+		Cached:  cached,
+		Modules: dependencies,
+		OnUpdate: func(u modproxy.Update) {
+			if u.Err != nil {
+				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
+			} else {
+				fmt.Printf("%s: %s [latest %v]\n", u.Module.Path, u.Module.Version, u.Version)
 			}
-			v := mod.MaxVersion("", pre)
-			if modproxy.IsNewerVersion(dep.Version, v, major) {
-				fmt.Printf("%s: %s [latest %v]\n", dep.Path, dep.Version, v)
-			}
-			return nil
-		})
-	}
-	return group.Wait()
+		},
+	})
+	return nil
 }
 
 func getcmd(args []string) error {
