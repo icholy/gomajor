@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime/debug"
 
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
@@ -28,6 +29,7 @@ The commands are:
     get     upgrade to a major version
     list    list available updates
     path    modify the module path
+    version print the gomajor version
     help    show this help text
 `
 
@@ -47,6 +49,10 @@ func main() {
 		}
 	case "path":
 		if err := pathcmd(flag.Args()[1:]); err != nil {
+			log.Fatal(err)
+		}
+	case "version":
+		if err := versioncmd(); err != nil {
 			log.Fatal(err)
 		}
 	case "help", "":
@@ -272,4 +278,14 @@ func pathcmd(args []string) error {
 			fmt.Printf("%s %s\n", pos, newpath)
 		},
 	})
+}
+
+func versioncmd() error {
+	version := "(devel)"
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		version = info.Main.Version
+	}
+	fmt.Printf("version: %s\n", version)
+	return nil
 }
