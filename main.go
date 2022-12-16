@@ -282,8 +282,7 @@ func pathcmd(args []string) error {
 
 func versioncmd() error {
 	version := "(devel)"
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
+	if info, ok := debug.ReadBuildInfo(); ok {
 		version = info.Main.Version
 	}
 	fmt.Printf("version: %s\n", version)
