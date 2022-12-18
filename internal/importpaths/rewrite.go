@@ -64,6 +64,7 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 
 // RewriteFile rewrites import statments in the named file
 // according to the rules supplied by the map of strings.
+// Credit: https://gist.github.com/jackspirou/61ce33574e9f411b8b4a
 func RewriteFile(name string, replace ReplaceFunc) error {
 	// create an empty fileset.
 	fset := token.NewFileSet()
@@ -72,9 +73,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 	// if we need to write it back out.
 	f, err := parser.ParseFile(fset, name, nil, parser.ParseComments)
 	if err != nil {
-		e := err.Error()
-		msg := "expected 'package', found 'EOF'"
-		if e[len(e)-len(msg):] == msg {
+		if strings.HasSuffix(err.Error(), "expected 'package', found 'EOF'") {
 			return nil
 		}
 		return err
