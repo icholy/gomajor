@@ -74,9 +74,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 	// if we need to write it back out.
 	f, err := parser.ParseFile(fset, name, nil, parser.ParseComments)
 	if err != nil {
-		e := err.Error()
-		msg := "expected 'package', found 'EOF'"
-		if e[len(e)-len(msg):] == msg {
+		if strings.HasSuffix(err.Error(), "expected 'package', found 'EOF'") {
 			return nil
 		}
 		return err
