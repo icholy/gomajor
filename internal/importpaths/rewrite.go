@@ -108,7 +108,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 				// unquote the comment import path value
 				ctext, err := strconv.Unquote(ctext)
 				if err != nil {
-					continue
+					return fmt.Errorf("%s: %v", pos, err)
 				}
 				// match the comment import path with the given replacement map
 				ctext, err = replace(pos, ctext)
