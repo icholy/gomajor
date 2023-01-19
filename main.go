@@ -147,7 +147,7 @@ func getcmd(args []string) error {
 					},
 				})
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "rewrite failed: %v", err)
+					fmt.Fprintf(os.Stderr, "rewrite: %v", err)
 				}
 			},
 		})
@@ -207,7 +207,7 @@ func getcmd(args []string) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("rewrite error: %w", err)
+		return fmt.Errorf("rewrite: %w", err)
 	}
 	return nil
 }
@@ -282,7 +282,7 @@ func pathcmd(args []string) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("rewrite error: %w", err)
+		return fmt.Errorf("rewrite: %w", err)
 	}
 	return nil
 }
