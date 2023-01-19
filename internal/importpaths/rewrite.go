@@ -105,7 +105,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 			const prefix = "// import "
 			if pos.Line == pkgpos.Line && strings.HasPrefix(c.Text, prefix) {
 				// trim off extra comment stuff
-				ctext := strings.TrimSpace(c.Text[:len(prefix)])
+				ctext := strings.TrimSpace(c.Text[len(prefix):])
 				// unquote the comment import path value
 				ctext, err := strconv.Unquote(ctext)
 				if err != nil {
