@@ -4,6 +4,7 @@ package importpaths
 
 import (
 	"errors"
+	"fmt"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -74,26 +75,24 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 	// if we need to write it back out.
 	f, err := parser.ParseFile(fset, name, nil, parser.ParseComments)
 	if err != nil {
-		if strings.HasSuffix(err.Error(), "expected 'package', found 'EOF'") {
-			return nil
-		}
 		return err
 	}
 	// iterate through the import paths. if a change occurs update bool.
 	change := false
 	for _, i := range f.Imports {
+		pos := fset.Position(i.Pos())
 		// unquote the import path value.
 		path, err := strconv.Unquote(i.Path.Value)
 		if err != nil {
-			return err
+			return fmt.Errorf("%s: %w", pos, err)
 		}
 		// replace the value using the replace function
-		path, err = replace(fset.Position(i.Pos()), path)
+		path, err = replace(pos, path)
 		if err != nil {
 			if err == ErrSkip {
 				continue
 			}
-			return err
+			return fmt.Errorf("%s: %w", pos, err)
 		}
 		i.Path.Value = strconv.Quote(path)
 		change = true
@@ -117,7 +116,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 					if err == ErrSkip {
 						continue
 					}
-					return err
+					return fmt.Errorf("%s: %w", pos, err)
 				}
 				c.Text = "// import " + strconv.Quote(ctext)
 				change = true
