@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"go/token"
-	"log"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -41,19 +40,19 @@ func main() {
 	switch flag.Arg(0) {
 	case "get":
 		if err := getcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, err.Error())
 		}
 	case "list":
 		if err := listcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, err.Error())
 		}
 	case "path":
 		if err := pathcmd(flag.Args()[1:]); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, err.Error())
 		}
 	case "version":
 		if err := versioncmd(); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, err.Error())
 		}
 	case "help", "":
 		flag.Usage()
@@ -199,7 +198,7 @@ func getcmd(args []string) error {
 		return err
 	}
 	// rewrite imports
-	return importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
+	err = importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 		PkgDir:     pkgdir,
 		Prefix:     modprefix,
 		NewVersion: version,
@@ -207,6 +206,10 @@ func getcmd(args []string) error {
 			fmt.Printf("%s %s\n", pos, newpath)
 		},
 	})
+	if err != nil {
+		return fmt.Errorf("rewrite error: %w", err)
+	}
+	return nil
 }
 
 func pathcmd(args []string) error {
@@ -270,7 +273,7 @@ func pathcmd(args []string) error {
 		return err
 	}
 	// rewrite import paths
-	return importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
+	err = importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 		Prefix:     oldmodprefix,
 		NewVersion: version,
 		NewPrefix:  modprefix,
@@ -278,6 +281,10 @@ func pathcmd(args []string) error {
 			fmt.Printf("%s %s\n", pos, newpath)
 		},
 	})
+	if err != nil {
+		return fmt.Errorf("rewrite error: %w", err)
+	}
+	return nil
 }
 
 func versioncmd() error {
