@@ -38,8 +38,8 @@ func Rewrite(dir string, replace ReplaceFunc) error {
 			if name == dir {
 				return nil
 			}
-			// don't recurse into vendor
-			if info.Name() == "vendor" {
+			// don't recurse into vendor or testdata directories
+			if info.Name() == "vendor" || info.Name() == "testdata" {
 				return filepath.SkipDir
 			}
 			// don't recurse into underscore-prefix or dot-prefix directories
