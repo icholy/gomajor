@@ -118,7 +118,7 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 					}
 					return fmt.Errorf("%s: %w", pos, err)
 				}
-				c.Text = "// import " + strconv.Quote(ctext)
+				c.Text = prefix + strconv.Quote(ctext)
 				change = true
 			}
 		}
