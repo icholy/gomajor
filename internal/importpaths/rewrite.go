@@ -98,20 +98,21 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 		i.Path.Value = strconv.Quote(path)
 		change = true
 	}
+	pkgpos := fset.Position(f.Package)
 	for _, cg := range f.Comments {
 		for _, c := range cg.List {
-			if strings.HasPrefix(c.Text, "// import \"") {
+			pos := fset.Position(c.Pos())
+			const prefix = "// import "
+			if pos.Line == pkgpos.Line && strings.HasPrefix(c.Text, prefix) {
 				// trim off extra comment stuff
-				ctext := c.Text
-				ctext = strings.TrimPrefix(ctext, "// import")
-				ctext = strings.TrimSpace(ctext)
+				ctext := strings.TrimSpace(c.Text[:len(prefix)])
 				// unquote the comment import path value
 				ctext, err := strconv.Unquote(ctext)
 				if err != nil {
-					return err
+					continue
 				}
 				// match the comment import path with the given replacement map
-				ctext, err = replace(fset.Position(c.Pos()), ctext)
+				ctext, err = replace(pos, ctext)
 				if err != nil {
 					if err == ErrSkip {
 						continue
