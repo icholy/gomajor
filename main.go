@@ -40,19 +40,19 @@ func main() {
 	switch flag.Arg(0) {
 	case "get":
 		if err := getcmd(flag.Args()[1:]); err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	case "list":
 		if err := listcmd(flag.Args()[1:]); err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	case "path":
 		if err := pathcmd(flag.Args()[1:]); err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	case "version":
 		if err := versioncmd(); err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	case "help", "":
 		flag.Usage()
