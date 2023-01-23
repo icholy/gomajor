@@ -117,6 +117,17 @@ func TestSplitPath(t *testing.T) {
 			pkgdir:    "plumbing",
 			modpath:   "gopkg.in/src-d/go-git.v4",
 		},
+		{
+			pkgpath:   "k8s.io/apiserver/pkg/authorization/authorizer",
+			modprefix: "k8s.io/api",
+			bad:       true,
+		},
+		{
+			pkgpath:   "github.com/icholy/digest",
+			modprefix: "github.com/icholy/digest",
+			modpath:   "github.com/icholy/digest",
+			pkgdir:    "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.pkgpath, func(t *testing.T) {

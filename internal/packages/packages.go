@@ -39,6 +39,9 @@ func SplitPath(modprefix, pkgpath string) (modpath, pkgdir string, ok bool) {
 		return "", "", false
 	}
 	modpathlen := len(modprefix)
+	if rest := pkgpath[modpathlen:]; len(rest) > 0 && rest[0] != '/' && rest[0] != '.' {
+		return "", "", false
+	}
 	if strings.HasPrefix(pkgpath[modpathlen:], "/") {
 		modpathlen++
 	}
