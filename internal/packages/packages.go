@@ -2,7 +2,6 @@ package packages
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -123,7 +122,7 @@ func Direct(dir string) ([]module.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err := ioutil.ReadFile(name)
+	data, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -139,7 +139,7 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(res.Body)
+		body, _ := io.ReadAll(res.Body)
 		if res.StatusCode == http.StatusNotFound && bytes.HasPrefix(body, []byte("not found:")) {
 			return nil, false, nil
 		}
