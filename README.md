@@ -1,5 +1,13 @@
 # GOMAJOR
 
+## Installation
+
+```
+go install github.com/icholy/gomajor@latest
+```
+
+## Usage
+
 ```
 $ gomajor help
 
