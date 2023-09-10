@@ -1,77 +1,66 @@
 # GOMAJOR
 
+> A tool for major version upgrades
+
 ## Installation
 
+```sh
+$ go install github.com/icholy/gomajor@latest
 ```
-go install github.com/icholy/gomajor@latest
-```
+
+## Commands
+
+* `get` - Upgrade to a major version
+* `list` - List available updates
+* `path` - Modify the module path
+* `version` - Print the gomajor version
+* `help` - Show this help text
+
+Usage format is as follows: `gomajor <command> [arguments]`
 
 ## Usage
 
-```
-$ gomajor help
-
-GoMajor is a tool for major version upgrades
-
-Usage:
-
-    gomajor <command> [arguments]
-
-The commands are:
-
-    get     upgrade to a major version
-    list    list available updates
-    path    modify the module path
-    version print the gomajor version
-    help    show this help text
-```
-
-### List Updates
+#### List Updates
 
 ```
 $ gomajor list
-github.com/go-redis/redis: v6.15.9+incompatible [latest v8.1.3]
 ```
 
-### Update and Rewrite Imports
+#### Update a module to its latest version
 
 ```
 $ gomajor get github.com/go-redis/redis@latest
-go get github.com/go-redis/redis/v8@v8.1.3
-foo.go:4:2 github.com/go-redis/redis/v8
-bar.go:5:2 github.com/go-redis/redis/v8
 ```
 
-**Note:** Use `gomajor get all` to update all modules.
+#### Switch a module to a specific version
 
-### Increment Module Path Version
+```
+$ gomajor get github.com/go-redis/redis@v7
+```
+
+### Update all mobules to their latest version
+
+```
+$ gomajor get all
+```
+
+#### Increment module path version
 
 ```
 $ gomajor path -next
-module github.com/go-redis/redis/v9
-bench_test.go:11:2 github.com/go-redis/redis/v9
-cluster.go:15:2 github.com/go-redis/redis/v9/internal
-cluster.go:16:2 github.com/go-redis/redis/v9/internal/hashtag
-# etc ...
 ```
 
-### Change Module Path
+#### Change module path version
+
+```
+$ gomajor path -version v3
+```
+
+#### Change module path
 
 ```
 $ gomajor path goredis.io
-module goredis.io
-bench_test.go:11:2 goredis.io
-cluster.go:15:2 goredis.io/internal
-cluster.go:16:2 goredis.io/internal/hashtag
-# etc ...
 ```
-
-### Features:
-
-* Finds latest version.
-* Rewrites your import paths.
-* Lets you ignore SIV on the command line.
-* Update your module's major version.
 
 ### Warning:
 
