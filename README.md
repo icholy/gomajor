@@ -13,8 +13,6 @@ $ go install github.com/icholy/gomajor@latest
 * `get` - Upgrade to a major version
 * `list` - List available updates
 * `path` - Modify the module path
-* `version` - Print the gomajor version
-* `help` - Show this help text
 
 Usage format is as follows: `gomajor <command> [arguments]`
 
