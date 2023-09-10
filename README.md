@@ -5,7 +5,7 @@
 ## Installation
 
 ```sh
-$ go install github.com/icholy/gomajor@latest
+go install github.com/icholy/gomajor@latest
 ```
 
 ## Commands
@@ -21,43 +21,43 @@ Usage format is as follows: `gomajor <command> [arguments]`
 #### List Updates
 
 ```
-$ gomajor list
+gomajor list
 ```
 
 #### Update a module to its latest version
 
 ```
-$ gomajor get github.com/go-redis/redis@latest
+gomajor get github.com/go-redis/redis@latest
 ```
 
 #### Switch a module to a specific version
 
 ```
-$ gomajor get github.com/go-redis/redis@v7
+gomajor get github.com/go-redis/redis@v7
 ```
 
 ### Update all mobules to their latest version
 
 ```
-$ gomajor get all
+gomajor get all
 ```
 
 #### Increment module path version
 
 ```
-$ gomajor path -next
+gomajor path -next
 ```
 
 #### Change module path version
 
 ```
-$ gomajor path -version v3
+gomajor path -version v3
 ```
 
 #### Change module path
 
 ```
-$ gomajor path goredis.io
+gomajor path goredis.io
 ```
 
 ### Warning:
