@@ -36,7 +36,7 @@ gomajor get github.com/go-redis/redis@latest
 gomajor get github.com/go-redis/redis@v7
 ```
 
-### Update all mobules to their latest version
+#### Update all mobules to their latest version
 
 ```
 gomajor get all
