@@ -149,7 +149,6 @@ func getcmd(args []string) error {
 					return
 				}
 				// go get
-				modprefix := packages.ModPrefix(u.Module.Path)
 				spec := u.Latest.Path + "@" + u.Latest.Version
 				fmt.Println("go get", spec)
 				cmd := exec.Command("go", "get", spec)
@@ -161,7 +160,7 @@ func getcmd(args []string) error {
 				}
 				// rewrite import paths
 				err := importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
-					Prefix:     modprefix,
+					Prefix:     packages.ModPrefix(u.Module.Path),
 					NewVersion: u.Latest.Version,
 					OnRewrite: func(pos token.Position, _, newpath string) {
 						fmt.Printf("%s %s\n", pos, newpath)
