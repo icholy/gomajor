@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/token"
@@ -65,12 +66,13 @@ func main() {
 
 func listcmd(args []string) error {
 	var dir string
-	var pre, cached, major bool
+	var pre, cached, major, jsonfmt bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.BoolVar(&major, "major", false, "only show newer major versions")
+	fset.BoolVar(&jsonfmt, "json", false, "output json format")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor list [modules]")
 		fset.PrintDefaults()
@@ -99,10 +101,15 @@ func listcmd(args []string) error {
 		Cached:  cached,
 		Modules: modules,
 		OnUpdate: func(u modproxy.Update) {
+			if jsonfmt {
+				data, _ := json.Marshal(u)
+				fmt.Println(string(data))
+				return
+			}
 			if u.Err != nil {
 				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
 			} else {
-				fmt.Printf("%s: %s [latest %v]\n", u.Module.Path, u.Module.Version, u.Version)
+				fmt.Printf("%s: %s [latest %v]\n", u.Module.Path, u.Module.Version, u.Latest.Version)
 			}
 		},
 	})
@@ -143,7 +150,7 @@ func getcmd(args []string) error {
 				}
 				// go get
 				modprefix := packages.ModPrefix(u.Module.Path)
-				spec := packages.JoinPath(modprefix, u.Version, "") + "@" + u.Version
+				spec := u.Latest.Path + "@" + u.Latest.Version
 				fmt.Println("go get", spec)
 				cmd := exec.Command("go", "get", spec)
 				cmd.Dir = dir
@@ -155,7 +162,7 @@ func getcmd(args []string) error {
 				// rewrite import paths
 				err := importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 					Prefix:     modprefix,
-					NewVersion: u.Version,
+					NewVersion: u.Latest.Version,
 					OnRewrite: func(pos token.Position, _, newpath string) {
 						fmt.Printf("%s %s\n", pos, newpath)
 					},
