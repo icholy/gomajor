@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 
 	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 
 	"github.com/icholy/gomajor/internal/importpaths"
@@ -71,19 +72,32 @@ func listcmd(args []string) error {
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: gomajor list")
+		fmt.Fprintln(os.Stderr, "Usage: gomajor list [modules]")
 		fset.PrintDefaults()
 	}
 	fset.Parse(args)
-	dependencies, err := packages.Direct(dir)
+	modules, err := packages.Direct(dir)
 	if err != nil {
 		return err
+	}
+	if fset.NArg() > 0 {
+		prefixes := map[string]bool{}
+		for _, a := range fset.Args() {
+			prefixes[packages.ModPrefix(a)] = true
+		}
+		var filtered []module.Version
+		for _, m := range modules {
+			if prefixes[packages.ModPrefix(m.Path)] {
+				filtered = append(filtered, m)
+			}
+		}
+		modules = filtered
 	}
 	modproxy.Updates(modproxy.UpdateOptions{
 		Pre:     pre,
 		Major:   major,
 		Cached:  cached,
-		Modules: dependencies,
+		Modules: modules,
 		OnUpdate: func(u modproxy.Update) {
 			if u.Err != nil {
 				fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
@@ -113,7 +127,7 @@ func getcmd(args []string) error {
 	}
 	// check for "all" special case
 	if fset.Arg(0) == "all" {
-		dependencies, err := packages.Direct(dir)
+		modules, err := packages.Direct(dir)
 		if err != nil {
 			return err
 		}
@@ -121,7 +135,7 @@ func getcmd(args []string) error {
 			Pre:     pre,
 			Major:   major,
 			Cached:  cached,
-			Modules: dependencies,
+			Modules: modules,
 			OnUpdate: func(u modproxy.Update) {
 				if u.Err != nil {
 					fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
