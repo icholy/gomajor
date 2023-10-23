@@ -239,9 +239,9 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 // Update reports a newer version of a module.
 // The Err field will be set if an error occured.
 type Update struct {
-	Module  module.Version
-	Version string
-	Err     error
+	Module module.Version
+	Latest module.Version
+	Err    error `json:",omitempty"`
 }
 
 // UpdateOptions specifies a set of modules to check for updates.
@@ -279,7 +279,13 @@ func Updates(opt UpdateOptions) {
 				}
 				v := mod.MaxVersion("", opt.Pre)
 				if IsNewerVersion(m.Version, v, opt.Major) {
-					ch <- Update{Module: m, Version: v}
+					ch <- Update{
+						Module: m,
+						Latest: module.Version{
+							Path:    mod.WithMajorPath(v),
+							Version: v,
+						},
+					}
 				}
 				return nil
 			})
