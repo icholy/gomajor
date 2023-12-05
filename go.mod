@@ -1,4 +1,4 @@
-module github.com/icholy/gomajor
+module github.com/Coding-Hen/gomajor
 
 go 1.15
 

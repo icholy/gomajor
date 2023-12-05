@@ -13,9 +13,9 @@ import (
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 
-	"github.com/icholy/gomajor/internal/importpaths"
-	"github.com/icholy/gomajor/internal/modproxy"
-	"github.com/icholy/gomajor/internal/packages"
+	"github.com/Coding-Hen/gomajor/internal/importpaths"
+	"github.com/Coding-Hen/gomajor/internal/modproxy"
+	"github.com/Coding-Hen/gomajor/internal/packages"
 )
 
 var help = `

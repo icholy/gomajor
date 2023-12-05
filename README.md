@@ -5,7 +5,7 @@
 ## Installation
 
 ```sh
-go install github.com/icholy/gomajor@latest
+go install github.com/Coding-Hen/gomajor@latest
 ```
 
 ## Commands

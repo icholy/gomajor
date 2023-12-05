@@ -15,7 +15,7 @@ import (
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/icholy/gomajor/internal/packages"
+	"github.com/Coding-Hen/gomajor/internal/packages"
 )
 
 // Module contains the module path and versions
