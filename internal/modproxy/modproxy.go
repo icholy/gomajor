@@ -119,12 +119,12 @@ func (m *Module) NextMajorPath() (string, bool) {
 // Query the module proxy for all versions of a module.
 // If the module does not exist, the second return parameter will be false
 // cached sets the Disable-Module-Fetch: true header
-func Query(modpath string, cached bool) (*Module, bool, error) {
+func Query(goProxy string, modpath string, cached bool) (*Module, bool, error) {
 	escaped, err := module.EscapePath(modpath)
 	if err != nil {
 		return nil, false, err
 	}
-	url := fmt.Sprintf("https://proxy.golang.org/%s/@v/list", escaped)
+	url := fmt.Sprintf("https://%s/%s/@v/list", goProxy, escaped)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, false, err
@@ -163,8 +163,8 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 
 // Latest finds the latest major version of a module
 // cached sets the Disable-Module-Fetch: true header
-func Latest(modpath string, cached bool) (*Module, error) {
-	latest, ok, err := Query(modpath, cached)
+func Latest(goProxy string, modpath string, cached bool) (*Module, error) {
+	latest, ok, err := Query(goProxy, modpath, cached)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func Latest(modpath string, cached bool) (*Module, error) {
 		if !ok {
 			return latest, nil
 		}
-		next, ok, err := Query(nextpath, cached)
+		next, ok, err := Query(goProxy, nextpath, cached)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +187,7 @@ func Latest(modpath string, cached bool) (*Module, error) {
 			if semver.Build(version) == "+incompatible" {
 				nextpath = latest.WithMajorPath(semver.Major(version))
 				if nextpath != latest.Path {
-					next, ok, err = Query(nextpath, cached)
+					next, ok, err = Query(goProxy, nextpath, cached)
 					if err != nil {
 						return nil, err
 					}
@@ -205,11 +205,11 @@ func Latest(modpath string, cached bool) (*Module, error) {
 // QueryPackage tries to find the module path for the provided package path
 // it does so by repeatedly chopping off the last path element and trying to
 // use it as a path.
-func QueryPackage(pkgpath string, cached bool) (*Module, error) {
+func QueryPackage(goProxy string, pkgpath string, cached bool) (*Module, error) {
 	prefix := pkgpath
 	for prefix != "" {
 		if module.CheckPath(prefix) == nil {
-			mod, ok, err := Query(prefix, cached)
+			mod, ok, err := Query(goProxy, prefix, cached)
 			if err != nil {
 				return nil, err
 			}
@@ -250,6 +250,7 @@ type UpdateOptions struct {
 	Pre      bool
 	Cached   bool
 	Major    bool
+	GoProxy  string
 	Modules  []module.Version
 	OnUpdate func(Update)
 }
@@ -272,7 +273,7 @@ func Updates(opt UpdateOptions) {
 				continue
 			}
 			group.Go(func() error {
-				mod, err := Latest(m.Path, opt.Cached)
+				mod, err := Latest(opt.GoProxy, m.Path, opt.Cached)
 				if err != nil {
 					ch <- Update{Module: m, Err: err}
 					return nil

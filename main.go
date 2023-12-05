@@ -65,7 +65,7 @@ func main() {
 }
 
 func listcmd(args []string) error {
-	var dir string
+	var dir, goProxy string
 	var pre, cached, major, jsonfmt bool
 	fset := flag.NewFlagSet("list", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
@@ -73,6 +73,7 @@ func listcmd(args []string) error {
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
 	fset.BoolVar(&major, "major", false, "only show newer major versions")
 	fset.BoolVar(&jsonfmt, "json", false, "output json format")
+	fset.StringVar(&goProxy, "goproxy", "proxy.golang.org", "go module proxy to use")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor list [modules]")
 		fset.PrintDefaults()
@@ -100,6 +101,7 @@ func listcmd(args []string) error {
 		Major:   major,
 		Cached:  cached,
 		Modules: modules,
+		GoProxy: goProxy,
 		OnUpdate: func(u modproxy.Update) {
 			if jsonfmt {
 				data, _ := json.Marshal(u)
@@ -117,13 +119,14 @@ func listcmd(args []string) error {
 }
 
 func getcmd(args []string) error {
-	var dir string
+	var dir, goProxy string
 	var pre, cached, major bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.BoolVar(&major, "major", false, "only get newer major versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.StringVar(&goProxy, "goProxy", "proxy.golang.org", "go module proxy to use")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor get <pathspec>")
 		fset.PrintDefaults()
@@ -143,6 +146,7 @@ func getcmd(args []string) error {
 			Major:   major,
 			Cached:  cached,
 			Modules: modules,
+			GoProxy: goProxy,
 			OnUpdate: func(u modproxy.Update) {
 				if u.Err != nil {
 					fmt.Fprintf(os.Stderr, "%s: failed: %v\n", u.Module.Path, u.Err)
@@ -175,7 +179,7 @@ func getcmd(args []string) error {
 	}
 	// split the package spec into its components
 	pkgpath, query := packages.SplitSpec(fset.Arg(0))
-	mod, err := modproxy.QueryPackage(pkgpath, cached)
+	mod, err := modproxy.QueryPackage(goProxy, pkgpath, cached)
 	if err != nil {
 		return err
 	}
@@ -187,7 +191,7 @@ func getcmd(args []string) error {
 	case "":
 		version = mod.MaxVersion("", pre)
 	case "latest":
-		latest, err := modproxy.Latest(mod.Path, cached)
+		latest, err := modproxy.Latest(goProxy, mod.Path, cached)
 		if err != nil {
 			return err
 		}

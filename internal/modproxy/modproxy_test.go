@@ -12,7 +12,7 @@ func TestLatest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {
-			mod, err := Latest(tt, true)
+			mod, err := Latest("proxy.golang.org", tt, true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -22,7 +22,7 @@ func TestLatest(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	mod, ok, err := Query("github.com/DATA-DOG/go-sqlmock", true)
+	mod, ok, err := Query("proxy.golang.org", "github.com/DATA-DOG/go-sqlmock", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestQueryPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.pkgpath, func(t *testing.T) {
-			mod, err := QueryPackage(tt.pkgpath, true)
+			mod, err := QueryPackage("proxy.golang.org", tt.pkgpath, true)
 			if err != nil {
 				t.Fatal(err)
 			}
