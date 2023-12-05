@@ -124,7 +124,12 @@ func Query(goProxy string, modpath string, cached bool) (*Module, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
-	url := fmt.Sprintf("https://%s/%s/@v/list", goProxy, escaped)
+	var url string
+	if (strings.Contains(goProxy, "http://") || strings.Contains(goProxy, "https://")){
+		url = fmt.Sprintf("%s/%s/@v/list", goProxy, escaped)
+	} else {
+		url = fmt.Sprintf("https://%s/%s/@v/list", goProxy, escaped)
+	}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, false, err
