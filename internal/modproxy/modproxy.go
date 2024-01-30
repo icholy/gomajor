@@ -163,7 +163,24 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 
 // Latest finds the latest major version of a module
 // cached sets the Disable-Module-Fetch: true header
-func Latest(modpath string, cached bool) (*Module, error) {
+// pre controls whether to return modules which only contain pre-release versions.
+func Latest(modpath string, cached, pre bool) (*Module, error) {
+	mods, err := List(modpath, cached)
+	if err != nil {
+		return nil, err
+	}
+	for i := len(mods); i > 0; i-- {
+		mod := mods[i-1]
+		if max := mod.MaxVersion("", pre); max != "" {
+			return mod, nil
+		}
+	}
+	return nil, fmt.Errorf("no module versions found")
+}
+
+// List finds all the major versions of a module
+// cached sets the Disable-Module-Fetch: true header
+func List(modpath string, cached bool) ([]*Module, error) {
 	latest, ok, err := Query(modpath, cached)
 	if err != nil {
 		return nil, err
@@ -171,10 +188,11 @@ func Latest(modpath string, cached bool) (*Module, error) {
 	if !ok {
 		return nil, fmt.Errorf("module not found: %s", modpath)
 	}
+	history := []*Module{latest}
 	for i := 0; i < 100; i++ {
 		nextpath, ok := latest.NextMajorPath()
 		if !ok {
-			return latest, nil
+			return history, nil
 		}
 		next, ok, err := Query(nextpath, cached)
 		if err != nil {
@@ -195,9 +213,10 @@ func Latest(modpath string, cached bool) (*Module, error) {
 			}
 		}
 		if !ok {
-			return latest, nil
+			return history, nil
 		}
 		latest = next
+		history = append(history, latest)
 	}
 	return nil, fmt.Errorf("request limit exceeded")
 }
@@ -272,7 +291,7 @@ func Updates(opt UpdateOptions) {
 				continue
 			}
 			group.Go(func() error {
-				mod, err := Latest(m.Path, opt.Cached)
+				mod, err := Latest(m.Path, opt.Cached, opt.Pre)
 				if err != nil {
 					ch <- Update{Module: m, Err: err}
 					return nil
