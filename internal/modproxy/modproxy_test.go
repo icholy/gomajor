@@ -9,10 +9,11 @@ func TestLatest(t *testing.T) {
 	tests := []string{
 		"github.com/go-redis/redis",
 		"github.com/russross/blackfriday",
+		"github.com/urfave/cli",
 	}
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {
-			mod, err := Latest(tt, true)
+			mod, err := Latest(tt, true, true)
 			if err != nil {
 				t.Fatal(err)
 			}

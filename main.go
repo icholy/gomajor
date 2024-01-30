@@ -187,7 +187,7 @@ func getcmd(args []string) error {
 	case "":
 		version = mod.MaxVersion("", pre)
 	case "latest":
-		latest, err := modproxy.Latest(mod.Path, cached)
+		latest, err := modproxy.Latest(mod.Path, cached, pre)
 		if err != nil {
 			return err
 		}
