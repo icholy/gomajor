@@ -3,6 +3,7 @@ package modproxy
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -264,7 +265,24 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 type Update struct {
 	Module module.Version
 	Latest module.Version
-	Err    error `json:",omitempty"`
+	Err    error
+}
+
+// MarshalJSON implements json.Marshaler
+func (u Update) MarshalJSON() ([]byte, error) {
+	var err string
+	if u.Err != nil {
+		err = u.Err.Error()
+	}
+	return json.Marshal(struct {
+		Module module.Version
+		Latest module.Version
+		Err    string `json:",omitempty"`
+	}{
+		Module: u.Module,
+		Latest: u.Latest,
+		Err:    err,
+	})
 }
 
 // UpdateOptions specifies a set of modules to check for updates.
