@@ -3,6 +3,7 @@ package modproxy
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -161,6 +162,9 @@ func Query(modpath string, cached bool) (*Module, bool, error) {
 	return &mod, true, nil
 }
 
+// ErrNoVersions is returned when the proxy has no version for a module
+var ErrNoVersions = errors.New("no module versions found")
+
 // Latest finds the latest major version of a module
 // cached sets the Disable-Module-Fetch: true header
 // pre controls whether to return modules which only contain pre-release versions.
@@ -175,7 +179,7 @@ func Latest(modpath string, cached, pre bool) (*Module, error) {
 			return mod, nil
 		}
 	}
-	return nil, fmt.Errorf("no module versions found")
+	return nil, ErrNoVersions
 }
 
 // List finds all the major versions of a module
@@ -292,6 +296,9 @@ func Updates(opt UpdateOptions) {
 			}
 			group.Go(func() error {
 				mod, err := Latest(m.Path, opt.Cached, opt.Pre)
+				if err == ErrNoVersions {
+					return nil
+				}
 				if err != nil {
 					ch <- Update{Module: m, Err: err}
 					return nil
