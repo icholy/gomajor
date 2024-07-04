@@ -10,9 +10,11 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 
+	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/errgroup"
@@ -24,6 +26,19 @@ import (
 type Module struct {
 	Path     string
 	Versions []string
+}
+
+// MaxVersionModule returns the latest version of the module in the list.
+// If pre is false, pre-release versions will are excluded.
+// Retracted versions are excluded.
+func MaxVersionModule(mods []*Module, pre bool, r Retractions) (*Module, string) {
+	for i := len(mods); i > 0; i-- {
+		mod := mods[i-1].Retract(r)
+		if max := mod.MaxVersion("", pre); max != "" {
+			return mod, max
+		}
+	}
+	return nil, ""
 }
 
 // MaxVersion returns the latest version.
@@ -44,6 +59,15 @@ func (m *Module) MaxVersion(prefix string, pre bool) string {
 	return max
 }
 
+// Retract returns a copy of m with the retracted versions removed.
+func (m *Module) Retract(r Retractions) *Module {
+	versions := slices.Clone(m.Versions)
+	return &Module{
+		Path:     m.Path,
+		Versions: slices.DeleteFunc(versions, r.Includes),
+	}
+}
+
 // IsNewerVersion returns true if newversion is greater than oldversion in terms of semver.
 // If major is true, then newversion must be a major version ahead of oldversion to be considered newer.
 func IsNewerVersion(oldversion, newversion string, major bool) bool {
@@ -59,31 +83,43 @@ func IsNewerVersion(oldversion, newversion string, major bool) bool {
 // If both versions are invalid, the empty string is returned.
 func MaxVersion(v, w string) string {
 	// sort by validity
+	if !semver.IsValid(v) && !semver.IsValid(w) {
+		return ""
+	}
+	if CompareVersion(v, w) == 1 {
+		return v
+	}
+	return w
+}
+
+// CompareVersion returns -1, 0, or 1 if v is less than, equal to, or greater than w.
+// Incompatible versions are considered lower than non-incompatible ones.
+// Invalid versions are considered lower than valid ones.
+// If both versions are invalid, the empty string is returned.
+func CompareVersion(v, w string) int {
+	// sort by validity
 	vValid := semver.IsValid(v)
 	wValid := semver.IsValid(w)
 	if !vValid && !wValid {
-		return ""
+		return 0
 	}
 	if vValid != wValid {
 		if vValid {
-			return v
+			return 1
 		}
-		return w
+		return -1
 	}
 	// sort by compatibility
 	vIncompatible := strings.HasSuffix(semver.Build(v), "+incompatible")
 	wIncompatible := strings.HasSuffix(semver.Build(w), "+incompatible")
 	if vIncompatible != wIncompatible {
 		if wIncompatible {
-			return v
+			return 1
 		}
-		return w
+		return -1
 	}
 	// sort by semver
-	if semver.Compare(v, w) == 1 {
-		return v
-	}
-	return w
+	return semver.Compare(v, w)
 }
 
 // NextMajor returns the next major version after the provided version
@@ -174,13 +210,20 @@ func Latest(modpath string, cached, pre bool) (*Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	for i := len(mods); i > 0; i-- {
-		mod := mods[i-1]
-		if max := mod.MaxVersion("", pre); max != "" {
-			return mod, nil
+	// find the retractions
+	var r Retractions
+	if mod, _ := MaxVersionModule(mods, false, nil); mod != nil {
+		var err error
+		r, err = FetchRetractions(mod)
+		if err != nil {
+			return nil, err
 		}
 	}
-	return nil, ErrNoVersions
+	mod, _ := MaxVersionModule(mods, pre, r)
+	if mod == nil {
+		return nil, ErrNoVersions
+	}
+	return mod, nil
 }
 
 // List finds all the major versions of a module
@@ -258,6 +301,70 @@ func QueryPackage(pkgpath string, cached bool) (*Module, error) {
 		prefix = strings.TrimSuffix(remaining, "/")
 	}
 	return nil, fmt.Errorf("failed to find module for package: %s", pkgpath)
+}
+
+// FetchRetractions fetches the retractions for this module.
+func FetchRetractions(mod *Module) (Retractions, error) {
+	max := mod.MaxVersion("", false)
+	if max == "" {
+		return nil, nil
+	}
+	escaped, err := module.EscapePath(mod.Path)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", "https://proxy.golang.org/"+escaped+"/@v/"+max+".mod", nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		msg := string(body)
+		if msg == "" {
+			msg = res.Status
+		}
+		return nil, fmt.Errorf("proxy: %s", msg)
+	}
+	file, err := modfile.ParseLax(mod.Path, body, nil)
+	if err != nil {
+		return nil, err
+	}
+	var retractions Retractions
+	for _, r := range file.Retract {
+		retractions = append(retractions, VersionRange{Low: r.Low, High: r.High})
+	}
+	return retractions, nil
+}
+
+// VersionRange is an inclusive version range.
+type VersionRange struct {
+	Low, High string
+}
+
+// Includes reports whether v is in the inclusive range
+func (r VersionRange) Includes(v string) bool {
+	return CompareVersion(v, r.Low) >= 0 && CompareVersion(v, r.High) <= 0
+}
+
+// Retractions is a list of retracted versions.
+type Retractions []VersionRange
+
+// Includes reports whether v is retracted
+func (rr Retractions) Includes(v string) bool {
+	for _, r := range rr {
+		if r.Includes(v) {
+			return true
+		}
+	}
+	return false
 }
 
 // Update reports a newer version of a module.
