@@ -313,7 +313,7 @@ func FetchRetractions(mod *Module) (Retractions, error) {
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		msg := string(body)
 		if msg == "" {
 			msg = res.Status
