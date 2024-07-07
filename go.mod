@@ -1,6 +1,6 @@
 module github.com/icholy/gomajor
 
-go 1.18
+go 1.21
 
 require (
 	golang.org/x/mod v0.18.0
