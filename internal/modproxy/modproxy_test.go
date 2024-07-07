@@ -1,7 +1,6 @@
 package modproxy
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -190,30 +189,6 @@ func TestModule(t *testing.T) {
 	}
 }
 
-func TestMaxVersion(t *testing.T) {
-	tests := []struct {
-		lo, hi string
-	}{
-		{"v0.0.0", "v0.0.1"},
-		{"v0.2.0", "v1.0.0"},
-		{"v3.0.0+incompatible", "v0.0.1"},
-		{"v3.0.0+incompatible", "v5.0.1+incompatible"},
-		{"", "v6.14.1+incompatible"},
-		{"invalid", ""},
-	}
-	for _, tt := range tests {
-		name := fmt.Sprintf("%s < %s", tt.lo, tt.hi)
-		t.Run(name, func(t *testing.T) {
-			if got := MaxVersion(tt.lo, tt.hi); got != tt.hi {
-				t.Fatalf("MaxVersion(%q, %q) = %q", tt.lo, tt.hi, got)
-			}
-			if got := MaxVersion(tt.hi, tt.lo); got != tt.hi {
-				t.Fatalf("MaxVersion(%q, %q) = %q", tt.hi, tt.lo, got)
-			}
-		})
-	}
-}
-
 func TestIsNewerVersion(t *testing.T) {
 	tests := []struct {
 		old, new     string
@@ -263,6 +238,12 @@ func TestCompareVersion(t *testing.T) {
 		{v: "", w: "", want: 0},
 		{v: "v0.1.0", w: "bad", want: 1},
 		{v: "v0.0.0+incompatible", w: "v0.0.0", want: -1},
+		{v: "v0.0.0", w: "v0.0.1", want: -1},
+		{v: "v0.2.0", w: "v1.0.0", want: -1},
+		{v: "v3.0.0+incompatible", w: "v0.0.1", want: -1},
+		{v: "v3.0.0+incompatible", w: "v5.0.1+incompatible", want: -1},
+		{v: "", w: "v6.14.1+incompatible", want: -1},
+		{v: "invalid", w: ""},
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
