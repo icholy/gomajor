@@ -1,8 +1,8 @@
 module github.com/icholy/gomajor
 
-go 1.15
+go 1.18
 
 require (
-	golang.org/x/mod v0.14.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/mod v0.18.0
+	golang.org/x/sync v0.7.0
 )
