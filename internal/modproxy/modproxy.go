@@ -45,6 +45,9 @@ func Request(path string, cached bool) (*http.Response, error) {
 	var last *http.Response
 	for _, proxy := range Proxies() {
 		url, err := neturl.JoinPath(proxy, path)
+		if err != nil {
+			return nil, err
+		}
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			return nil, err
