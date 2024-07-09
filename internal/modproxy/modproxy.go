@@ -28,10 +28,10 @@ type Module struct {
 	Versions []string
 }
 
-// MaxVersionModule returns the latest version of the module in the list.
+// MaxVersion returns the latest version of the module in the list.
 // If pre is false, pre-release versions will are excluded.
 // Retracted versions are excluded.
-func MaxVersionModule(mods []*Module, pre bool, r Retractions) (*Module, string) {
+func MaxVersion(mods []*Module, pre bool, r Retractions) (*Module, string) {
 	for i := len(mods); i > 0; i-- {
 		mod := mods[i-1].Retract(r)
 		if max := mod.MaxVersion("", pre); max != "" {
@@ -199,14 +199,14 @@ func Latest(modpath string, cached, pre bool) (*Module, error) {
 	}
 	// find the retractions
 	var r Retractions
-	if mod, _ := MaxVersionModule(mods, false, nil); mod != nil {
+	if mod, _ := MaxVersion(mods, false, nil); mod != nil {
 		var err error
 		r, err = FetchRetractions(mod)
 		if err != nil {
 			return nil, err
 		}
 	}
-	mod, _ := MaxVersionModule(mods, pre, r)
+	mod, _ := MaxVersion(mods, pre, r)
 	if mod == nil {
 		return nil, ErrNoVersions
 	}
