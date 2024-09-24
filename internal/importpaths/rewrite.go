@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/icholy/gomajor/internal/packages"
+	"github.com/jeroenvervaeke/gomajor/internal/packages"
 )
 
 // ErrSkip is used to signal that an import should be skipped
