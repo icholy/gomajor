@@ -117,13 +117,14 @@ func listcmd(args []string) error {
 }
 
 func getcmd(args []string) error {
-	var dir string
+	var dir, exact string
 	var pre, cached, major bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.BoolVar(&major, "major", false, "only get newer major versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.StringVar(&exact, "exact", "", "exact package version to upgrade")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor get <pathspec>")
 		fset.PrintDefaults()
@@ -221,6 +222,7 @@ func getcmd(args []string) error {
 	err = importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 		PkgDir:     pkgdir,
 		Prefix:     modprefix,
+		Exact:      exact,
 		NewVersion: version,
 		OnRewrite: func(pos token.Position, _, newpath string) {
 			fmt.Printf("%s %s\n", pos, newpath)
