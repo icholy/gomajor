@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime/debug"
 
 	"golang.org/x/mod/modfile"
@@ -117,13 +118,14 @@ func listcmd(args []string) error {
 }
 
 func getcmd(args []string) error {
-	var dir string
+	var dir, rewrite string
 	var pre, cached, major bool
 	fset := flag.NewFlagSet("get", flag.ExitOnError)
 	fset.BoolVar(&pre, "pre", false, "allow non-v0 prerelease versions")
 	fset.BoolVar(&major, "major", false, "only get newer major versions")
 	fset.StringVar(&dir, "dir", ".", "working directory")
 	fset.BoolVar(&cached, "cached", true, "only fetch cached content from the module proxy")
+	fset.StringVar(&rewrite, "rewrite", "", "exact package version to upgrade")
 	fset.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: gomajor get <pathspec>")
 		fset.PrintDefaults()
@@ -162,8 +164,9 @@ func getcmd(args []string) error {
 				err := importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 					Prefix:     packages.ModPrefix(u.Module.Path),
 					NewVersion: u.Latest.Version,
-					OnRewrite: func(pos token.Position, _, newpath string) {
+					OnRewrite: func(pos token.Position, _, newpath string) error {
 						fmt.Printf("%s %s\n", pos, newpath)
+						return nil
 					},
 				})
 				if err != nil {
@@ -217,13 +220,25 @@ func getcmd(args []string) error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+	var rewriteRegex *regexp.Regexp
+	if rewrite != "" {
+		if rewriteRegex, err = regexp.Compile(rewrite); err != nil {
+			return err
+		}
+	}
 	// rewrite imports
 	err = importpaths.RewriteModule(dir, importpaths.RewriteModuleOptions{
 		PkgDir:     pkgdir,
 		Prefix:     modprefix,
 		NewVersion: version,
-		OnRewrite: func(pos token.Position, _, newpath string) {
+		OnRewrite: func(pos token.Position, oldpath, newpath string) error {
+			if rewriteRegex != nil && !rewriteRegex.MatchString(oldpath) {
+				return importpaths.ErrSkip
+			}
+
 			fmt.Printf("%s %s\n", pos, newpath)
+
+			return nil
 		},
 	})
 	if err != nil {
@@ -297,8 +312,9 @@ func pathcmd(args []string) error {
 		Prefix:     oldmodprefix,
 		NewVersion: version,
 		NewPrefix:  modprefix,
-		OnRewrite: func(pos token.Position, _, newpath string) {
+		OnRewrite: func(pos token.Position, _, newpath string) error {
 			fmt.Printf("%s %s\n", pos, newpath)
+			return nil
 		},
 	})
 	if err != nil {

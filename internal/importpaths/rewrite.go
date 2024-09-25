@@ -165,7 +165,7 @@ type RewriteModuleOptions struct {
 	NewVersion string
 	NewPrefix  string
 	PkgDir     string
-	OnRewrite  func(pos token.Position, oldpath, newpath string)
+	OnRewrite  func(pos token.Position, oldpath, newpath string) error
 }
 
 // RewriteModule rewrites imports of a specific module to a new version or prefix.
@@ -188,7 +188,9 @@ func RewriteModule(dir string, opt RewriteModuleOptions) error {
 			return "", ErrSkip
 		}
 		if opt.OnRewrite != nil {
-			opt.OnRewrite(pos, path, newpath)
+			if err := opt.OnRewrite(pos, path, newpath); err != nil {
+				return "", err
+			}
 		}
 		return newpath, nil
 	})
