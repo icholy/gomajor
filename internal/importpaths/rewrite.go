@@ -162,11 +162,10 @@ func RewriteFile(name string, replace ReplaceFunc) error {
 // RewriteModuleOptions contains options for rewriting a module's imports.
 type RewriteModuleOptions struct {
 	Prefix     string
-	Exact      string
 	NewVersion string
 	NewPrefix  string
 	PkgDir     string
-	OnRewrite  func(pos token.Position, oldpath, newpath string)
+	OnRewrite  func(pos token.Position, oldpath, newpath string) error
 }
 
 // RewriteModule rewrites imports of a specific module to a new version or prefix.
@@ -176,14 +175,8 @@ func RewriteModule(dir string, opt RewriteModuleOptions) error {
 	if opt.NewPrefix != "" {
 		modprefix = opt.NewPrefix
 	}
-
-	matchPrefix := opt.Prefix
-	if opt.Exact != "" {
-		matchPrefix = opt.Exact
-	}
-
 	return Rewrite(dir, func(pos token.Position, path string) (string, error) {
-		_, pkgdir, ok := packages.SplitPath(matchPrefix, path)
+		_, pkgdir, ok := packages.SplitPath(opt.Prefix, path)
 		if !ok {
 			return "", ErrSkip
 		}
@@ -195,7 +188,9 @@ func RewriteModule(dir string, opt RewriteModuleOptions) error {
 			return "", ErrSkip
 		}
 		if opt.OnRewrite != nil {
-			opt.OnRewrite(pos, path, newpath)
+			if err := opt.OnRewrite(pos, path, newpath); err != nil {
+				return "", err
+			}
 		}
 		return newpath, nil
 	})
