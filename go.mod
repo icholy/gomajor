@@ -1,4 +1,4 @@
-module github.com/jeroenvervaeke/gomajor
+module github.com/icholy/gomajor
 
 go 1.21
 
