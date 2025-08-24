@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	neturl "net/url"
-	"os"
 	"path"
 	"slices"
 	"strconv"
@@ -19,31 +18,19 @@ import (
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/icholy/gomajor/internal/goenv"
 	"github.com/icholy/gomajor/internal/packages"
 )
-
-// Proxies returns the module proxies.
-func Proxies() []string {
-	var proxies []string
-	if s := os.Getenv("GOPROXY"); s != "" {
-		for _, proxy := range strings.Split(s, ",") {
-			proxy = strings.TrimSpace(proxy)
-			if proxy != "" && proxy != "direct" {
-				proxies = append(proxies, proxy)
-			}
-		}
-	}
-	if len(proxies) == 0 {
-		proxies = append(proxies, "https://proxy.golang.org")
-	}
-	return proxies
-}
 
 // Request sends requests to the module proxies in order and returns
 // the first 200 response.
 func Request(path string, cached bool) (*http.Response, error) {
+	proxies := goenv.GOPROXYURL()
+	if len(proxies) == 0 {
+		return nil, errors.New("no GOPROXY urls available")
+	}
 	var last *http.Response
-	for _, proxy := range Proxies() {
+	for _, proxy := range proxies {
 		url, err := neturl.JoinPath(proxy, path)
 		if err != nil {
 			return nil, err
@@ -427,7 +414,7 @@ func Updates(opt UpdateOptions) {
 	ch := make(chan Update)
 	go func() {
 		defer close(ch)
-		private := os.Getenv("GOPRIVATE")
+		private := goenv.Get("GOPRIVATE")
 		var group errgroup.Group
 		if opt.Cached {
 			group.SetLimit(3)

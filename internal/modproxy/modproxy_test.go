@@ -1,7 +1,6 @@
 package modproxy
 
 import (
-	"slices"
 	"testing"
 )
 
@@ -286,31 +285,6 @@ func TestVersionRange(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			if got := tt.r.Includes(tt.v); got != tt.want {
 				t.Fatalf("VersionRange{Low: %q, High: %q}.Includes(%q) = %v, want %v", tt.r.Low, tt.r.High, tt.v, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestProxies(t *testing.T) {
-	tests := []struct {
-		name    string
-		env     string
-		proxies []string
-	}{
-		{
-			env:     "direct",
-			proxies: []string{"https://proxy.golang.org"},
-		},
-		{
-			env:     "https://test.proxy",
-			proxies: []string{"https://test.proxy"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			t.Setenv("GOPROXY", tt.env)
-			if got := Proxies(); !slices.Equal(got, tt.proxies) {
-				t.Fatalf("GOPROXY=%q: want %v, got %v", tt.env, tt.proxies, got)
 			}
 		})
 	}
