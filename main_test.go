@@ -8,12 +8,12 @@ import (
 
 func TestHelpCommand(t *testing.T) {
 	testscript.Run(t, testscript.Params{
-		Dir: "testdata/help",
+		Dir: "testdata/testscript/help",
 	})
 }
 
 func TestPathCommand(t *testing.T) {
 	testscript.Run(t, testscript.Params{
-		Dir: "testdata/path",
+		Dir: "testdata/testscript/path",
 	})
 }
