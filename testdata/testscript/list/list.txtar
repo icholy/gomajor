@@ -1,0 +1,25 @@
+# Test list command with testmodproxy
+
+# Create a go.mod file with dependencies that have updates
+exec go mod init example.com/myproject
+
+# Manually create the go.mod with the dependencies we want to test
+cp go.mod.template go.mod
+
+# Test list command - should show available updates
+exec gomajor list
+stdout 'example.com/testmod: v1.0.0 \[latest v3.0.0\]'
+
+# Test list command with json output
+exec gomajor list -json
+stdout '"Module":.*"Path":"example.com/testmod","Version":"v1.0.0"'
+stdout '"Latest":.*"Path":"example.com/testmod/v3","Version":"v3.0.0"'
+
+-- go.mod.template --
+module example.com/myproject
+
+go 1.21
+
+require (
+	example.com/testmod v1.0.0
+)
