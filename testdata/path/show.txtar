@@ -1,0 +1,8 @@
+# Test path command - show current module path
+
+# Create a basic go.mod file
+exec go mod init example.com/testmod
+
+# Test showing current module path (no changes)
+exec gomajor path
+stdout 'module example.com/testmod'

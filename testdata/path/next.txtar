@@ -1,0 +1,40 @@
+# Test path command - increment to next major version
+
+# Create a basic go.mod file
+exec go mod init example.com/testmod
+
+# Test -next flag
+exec gomajor path -next
+stdout 'module example.com/testmod/v2'
+stdout 'main.go:4:2 example.com/testmod/v2/internal'
+
+# Verify go.mod was updated
+cmp go.mod v2_go.mod
+
+# Verify import path was rewritten
+cmp main.go main_v2.go
+
+-- main.go --
+package main
+
+import (
+	"example.com/testmod/internal"
+)
+
+func main() {
+	// uses internal package
+}
+-- v2_go.mod --
+module example.com/testmod/v2
+
+go 1.25.0
+-- main_v2.go --
+package main
+
+import (
+	"example.com/testmod/v2/internal"
+)
+
+func main() {
+	// uses internal package
+}
