@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"os/exec"
 	"strings"
+	"testing"
 
 	"golang.org/x/sync/singleflight"
 )
@@ -11,15 +12,22 @@ import (
 var group singleflight.Group
 
 // Get retrieves a Go environment variable using 'go env <name>'.
-// Results are cached using singleflight to avoid duplicate calls.
+// Results are cached using singleflight to avoid duplicate calls, unless running in test mode.
 func Get(key string) string {
-	value, _, _ := group.Do(key, func() (any, error) {
+	get := func() string {
 		cmd := exec.Command("go", "env", key)
 		output, err := cmd.Output()
 		if err != nil {
-			return "", nil
+			return ""
 		}
-		return strings.TrimSpace(string(output)), nil
+		return strings.TrimSpace(string(output))
+	}
+	// Don't cache during tests to allow environment overrides
+	if testing.Testing() {
+		return get()
+	}
+	value, _, _ := group.Do(key, func() (any, error) {
+		return get(), nil
 	})
 	return value.(string)
 }

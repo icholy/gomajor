@@ -87,5 +87,3 @@ func TestGOPROXYURL(t *testing.T) {
 		})
 	}
 }
-
-
