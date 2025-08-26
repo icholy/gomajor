@@ -85,15 +85,25 @@ func fileRequest(u *neturl.URL, subpath string) (*http.Response, error) {
 	full := filepath.Join(root, filepath.FromSlash(subpath))
 	f, err := os.Open(full)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return &http.Response{
+				StatusCode: http.StatusNotFound,
+				Status:     http.StatusText(http.StatusNotFound),
+				Body:       http.NoBody,
+			}, nil
+		}
 		return nil, err
 	}
-	fi, _ := f.Stat()
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
 	return &http.Response{
 		StatusCode:    http.StatusOK,
-		Status:        "200 OK",
+		Status:        http.StatusText(http.StatusOK),
 		Body:          f,
 		ContentLength: fi.Size(),
-		Header:        make(http.Header),
 	}, nil
 }
 
