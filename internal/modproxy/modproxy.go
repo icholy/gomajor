@@ -8,7 +8,10 @@ import (
 	"io"
 	"net/http"
 	neturl "net/url"
+	"os"
 	"path"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,19 +34,11 @@ func Request(path string, cached bool) (*http.Response, error) {
 	}
 	var last *http.Response
 	for _, proxy := range proxies {
-		url, err := neturl.JoinPath(proxy, path)
+		u, err := neturl.Parse(proxy)
 		if err != nil {
 			return nil, err
 		}
-		req, err := http.NewRequest(http.MethodGet, url, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("User-Agent", "GoMajor/1.0")
-		if cached {
-			req.Header.Set("Disable-Module-Fetch", "true")
-		}
-		res, err := http.DefaultClient.Do(req)
+		res, err := doProxyRequest(u, path, cached)
 		if err != nil {
 			return nil, err
 		}
@@ -53,6 +48,63 @@ func Request(path string, cached bool) (*http.Response, error) {
 		last = res
 	}
 	return last, nil
+}
+
+func doProxyRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, error) {
+	switch u.Scheme {
+	case "http", "https":
+		return httpRequest(u, subpath, cached)
+	case "file":
+		return fileRequest(u, subpath)
+	default:
+		return nil, errors.New("unsupported protocol " + u.Scheme)
+	}
+}
+
+func httpRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, error) {
+	url, err := neturl.JoinPath(u.String(), subpath)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "GoMajor/1.0")
+	if cached {
+		req.Header.Set("Disable-Module-Fetch", "true")
+	}
+	return http.DefaultClient.Do(req)
+}
+
+func fileRequest(u *neturl.URL, subpath string) (*http.Response, error) {
+	root, err := fileURLToPath(u)
+	if err != nil {
+		return nil, err
+	}
+	full := filepath.Join(root, filepath.FromSlash(subpath))
+	f, err := os.Open(full)
+	if err != nil {
+		return nil, err
+	}
+	fi, _ := f.Stat()
+	return &http.Response{
+		StatusCode:    http.StatusOK,
+		Status:        "200 OK",
+		Body:          f,
+		ContentLength: fi.Size(),
+		Header:        make(http.Header),
+	}, nil
+}
+
+func fileURLToPath(u *neturl.URL) (string, error) {
+	p := u.Path
+	if runtime.GOOS == "windows" {
+		if len(p) >= 3 && p[0] == '/' && p[2] == ':' {
+			p = p[1:]
+		}
+	}
+	return filepath.FromSlash(p), nil
 }
 
 // Module contains the module path and versions
