@@ -242,7 +242,6 @@ func TestQuery(t *testing.T) {
 	}
 	server := httptest.NewServer(proxy)
 	defer server.Close()
-	t.Setenv("GOPROXY", server.URL)
 
 	tests := []struct {
 		name    string
@@ -266,20 +265,45 @@ func TestQuery(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mod, ok, err := Query(tt.modpath, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if ok != tt.exist {
-				t.Fatalf("Query() ok = %v, want %v", ok, tt.exist)
-			}
-			if !reflect.DeepEqual(mod, tt.want) {
-				t.Fatalf("Query() = %+v, want %+v", mod, tt.want)
-			}
-		})
-	}
+	t.Run("http", func(t *testing.T) {
+		t.Setenv("GOPROXY", server.URL)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mod, ok, err := Query(tt.modpath, false)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if ok != tt.exist {
+					t.Fatalf("Query() ok = %v, want %v", ok, tt.exist)
+				}
+				if !reflect.DeepEqual(mod, tt.want) {
+					t.Fatalf("Query() = %+v, want %+v", mod, tt.want)
+				}
+			})
+		}
+	})
+
+	t.Run("file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		if err := proxy.WriteToDir(tmpDir); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("GOPROXY", "file://"+tmpDir)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mod, ok, err := Query(tt.modpath, false)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if ok != tt.exist {
+					t.Fatalf("Query() ok = %v, want %v", ok, tt.exist)
+				}
+				if !reflect.DeepEqual(mod, tt.want) {
+					t.Fatalf("Query() = %+v, want %+v", mod, tt.want)
+				}
+			})
+		}
+	})
 }
 
 func TestLatest(t *testing.T) {
@@ -290,7 +314,6 @@ func TestLatest(t *testing.T) {
 	}
 	server := httptest.NewServer(proxy)
 	defer server.Close()
-	t.Setenv("GOPROXY", server.URL)
 
 	tests := []struct {
 		name    string
@@ -327,17 +350,39 @@ func TestLatest(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mod, err := Latest(tt.modpath, false, tt.pre)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !reflect.DeepEqual(mod, tt.want) {
-				t.Fatalf("Latest() = %+v, want %+v", mod, tt.want)
-			}
-		})
-	}
+	t.Run("http", func(t *testing.T) {
+		t.Setenv("GOPROXY", server.URL)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mod, err := Latest(tt.modpath, false, tt.pre)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(mod, tt.want) {
+					t.Fatalf("Latest() = %+v, want %+v", mod, tt.want)
+				}
+			})
+		}
+	})
+
+	t.Run("file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		if err := proxy.WriteToDir(tmpDir); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("GOPROXY", "file://"+tmpDir)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mod, err := Latest(tt.modpath, false, tt.pre)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(mod, tt.want) {
+					t.Fatalf("Latest() = %+v, want %+v", mod, tt.want)
+				}
+			})
+		}
+	})
 }
 
 func TestQueryPackage(t *testing.T) {
@@ -386,109 +431,3 @@ func TestQueryPackage(t *testing.T) {
 	}
 }
 
-func TestFileProxy(t *testing.T) {
-	// Load test modules and write to temporary directory
-	proxy, err := testmodproxy.Load("testdata/modules")
-	if err != nil {
-		t.Fatal(err)
-	}
-	
-	tmpDir := t.TempDir()
-	if err := proxy.WriteToDir(tmpDir); err != nil {
-		t.Fatal(err)
-	}
-	
-	// Set GOPROXY to file:// URL
-	t.Setenv("GOPROXY", "file://"+tmpDir)
-	
-	tests := []struct {
-		name    string
-		modpath string
-		want    *Module
-		exist   bool
-	}{
-		{
-			name:    "existing module via file://",
-			modpath: "example.com/testmod",
-			want: &Module{
-				Path:     "example.com/testmod",
-				Versions: []string{"v1.0.0", "v1.1.0", "v1.2.0"},
-			},
-			exist: true,
-		},
-		{
-			name:    "non-existent module via file://",
-			modpath: "example.com/nonexistent", 
-			exist:   false,
-		},
-	}
-	
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mod, ok, err := Query(tt.modpath, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if ok != tt.exist {
-				t.Fatalf("Query() ok = %v, want %v", ok, tt.exist)
-			}
-			if !reflect.DeepEqual(mod, tt.want) {
-				t.Fatalf("Query() = %+v, want %+v", mod, tt.want)
-			}
-		})
-	}
-}
-
-func TestFileProxyLatest(t *testing.T) {
-	// Load test modules and write to temporary directory
-	proxy, err := testmodproxy.Load("testdata/modules")
-	if err != nil {
-		t.Fatal(err)
-	}
-	
-	tmpDir := t.TempDir()
-	if err := proxy.WriteToDir(tmpDir); err != nil {
-		t.Fatal(err)
-	}
-	
-	// Set GOPROXY to file:// URL
-	t.Setenv("GOPROXY", "file://"+tmpDir)
-	
-	tests := []struct {
-		name    string
-		modpath string
-		pre     bool
-		want    *Module
-	}{
-		{
-			name:    "latest from v1 base via file://",
-			modpath: "example.com/testmod",
-			pre:     false,
-			want: &Module{
-				Path:     "example.com/testmod/v3",
-				Versions: []string{"v3.0.0"},
-			},
-		},
-		{
-			name:    "latest from v2 path via file://",
-			modpath: "example.com/testmod/v2",
-			pre:     false,
-			want: &Module{
-				Path:     "example.com/testmod/v3",
-				Versions: []string{"v3.0.0"},
-			},
-		},
-	}
-	
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mod, err := Latest(tt.modpath, false, tt.pre)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !reflect.DeepEqual(mod, tt.want) {
-				t.Fatalf("Latest() = %+v, want %+v", mod, tt.want)
-			}
-		})
-	}
-}
