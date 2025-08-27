@@ -32,17 +32,17 @@ func Get(key string) string {
 	return value.(string)
 }
 
-// GOPROXYURL returns the GOPROXY URLs as a slice, filtering out non-URL values.
-func GOPROXYURL() []string {
+// GOPROXYURL returns the GOPROXY URLs as a slice of parsed URLs, filtering out non-URL values.
+func GOPROXYURL() []*url.URL {
 	value := Get("GOPROXY")
 	if value == "" {
 		return nil
 	}
-	var proxies []string
+	var proxies []*url.URL
 	for _, p := range strings.Split(value, ",") {
 		p = strings.TrimSpace(p)
 		if u, err := url.Parse(p); err == nil && u.Scheme != "" {
-			proxies = append(proxies, p)
+			proxies = append(proxies, u)
 		}
 	}
 	return proxies

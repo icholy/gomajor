@@ -33,11 +33,7 @@ func Request(path string, cached bool) (*http.Response, error) {
 		return nil, errors.New("no GOPROXY urls available")
 	}
 	var last *http.Response
-	for _, proxy := range proxies {
-		u, err := neturl.Parse(proxy)
-		if err != nil {
-			return nil, err
-		}
+	for _, u := range proxies {
 		res, err := doProxyRequest(u, path, cached)
 		if err != nil {
 			return nil, err

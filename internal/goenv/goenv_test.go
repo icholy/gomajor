@@ -1,6 +1,7 @@
 package goenv
 
 import (
+	"net/url"
 	"reflect"
 	"testing"
 )
@@ -47,32 +48,32 @@ func TestGOPROXYURL(t *testing.T) {
 	tests := []struct {
 		name   string
 		setenv string
-		want   []string
+		want   []*url.URL
 	}{
 		{
 			name:   "default when unset",
 			setenv: "",
-			want:   []string{"https://proxy.golang.org"},
+			want:   []*url.URL{{Scheme: "https", Host: "proxy.golang.org"}},
 		},
 		{
 			name:   "single proxy",
 			setenv: "https://proxy.golang.org",
-			want:   []string{"https://proxy.golang.org"},
+			want:   []*url.URL{{Scheme: "https", Host: "proxy.golang.org"}},
 		},
 		{
 			name:   "multiple proxies",
 			setenv: "https://proxy.golang.org,direct",
-			want:   []string{"https://proxy.golang.org"},
+			want:   []*url.URL{{Scheme: "https", Host: "proxy.golang.org"}},
 		},
 		{
 			name:   "proxies with whitespace",
 			setenv: " https://proxy.golang.org , direct , https://custom.proxy.com ",
-			want:   []string{"https://proxy.golang.org", "https://custom.proxy.com"},
+			want:   []*url.URL{{Scheme: "https", Host: "proxy.golang.org"}, {Scheme: "https", Host: "custom.proxy.com"}},
 		},
 		{
 			name:   "proxies with empty entries",
 			setenv: "https://proxy.golang.org,,direct, ,https://custom.proxy.com",
-			want:   []string{"https://proxy.golang.org", "https://custom.proxy.com"},
+			want:   []*url.URL{{Scheme: "https", Host: "proxy.golang.org"}, {Scheme: "https", Host: "custom.proxy.com"}},
 		},
 	}
 	for _, tt := range tests {
