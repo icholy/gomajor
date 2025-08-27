@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"golang.org/x/mod/module"
@@ -24,18 +25,8 @@ type ModuleProxy struct {
 
 type Module struct {
 	Path     string
+	List     []byte
 	Versions map[string]*ModuleVersion
-}
-
-func (m *Module) List() []string {
-	var versions []string
-	for version := range m.Versions {
-		versions = append(versions, version)
-	}
-	sort.Slice(versions, func(i, j int) bool {
-		return semver.Compare(versions[i], versions[j]) < 0
-	})
-	return versions
 }
 
 type ModuleVersion struct {
@@ -108,6 +99,15 @@ func Load(rootDir string) (*ModuleProxy, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Generate list data for each module
+	for _, mod := range p.Modules {
+		var list bytes.Buffer
+		for _, version := range slices.SortedFunc(maps.Keys(mod.Versions), semver.Compare) {
+			list.WriteString(version)
+			list.WriteByte('\n')
+		}
+		mod.List = list.Bytes()
+	}
 	return p, nil
 }
 
@@ -137,9 +137,7 @@ func (p *ModuleProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "text/plain")
-		for _, version := range mod.List() {
-			fmt.Fprintln(w, version)
-		}
+		w.Write(mod.List)
 		return
 	}
 	// GET /{module}/@v/{version}.zip
@@ -229,4 +227,34 @@ func (p *ModuleProxy) zip(dir, modpath, version string) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// WriteToDir writes the proxy contents to a directory in the format expected by file:// URLs.
+func (p *ModuleProxy) WriteToDir(dir string) error {
+	for modpath, mod := range p.Modules {
+		escaped, err := module.EscapePath(modpath)
+		if err != nil {
+			return err
+		}
+		mdir := filepath.Join(dir, escaped, "@v")
+		if err := os.MkdirAll(mdir, 0755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(mdir, "list"), mod.List, 0644); err != nil {
+			return err
+		}
+		for version, ver := range mod.Versions {
+			if err := os.WriteFile(filepath.Join(mdir, version+".mod"), ver.Mod, 0644); err != nil {
+				return err
+			}
+			if err := os.WriteFile(filepath.Join(mdir, version+".zip"), ver.Zip, 0644); err != nil {
+				return err
+			}
+			info := fmt.Sprintf(`{"Version":"%s","Time":"2023-01-01T00:00:00Z"}`, version)
+			if err := os.WriteFile(filepath.Join(mdir, version+".info"), []byte(info), 0644); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
