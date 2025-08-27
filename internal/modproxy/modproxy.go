@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -74,12 +73,14 @@ func httpRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, er
 }
 
 func fileRequest(u *neturl.URL, subpath string) (*http.Response, error) {
-	root, err := fileURLToPath(u)
-	if err != nil {
-		return nil, err
+	root := u.Path
+	if filepath.VolumeName(root) != "" {
+		root, _ = strings.CutPrefix(root, "/")
 	}
-	full := filepath.Join(root, filepath.FromSlash(subpath))
-	f, err := os.Open(full)
+	f, err := os.Open(filepath.Join(
+		filepath.FromSlash(root),
+		filepath.FromSlash(subpath),
+	))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &http.Response{
@@ -101,16 +102,6 @@ func fileRequest(u *neturl.URL, subpath string) (*http.Response, error) {
 		Body:          f,
 		ContentLength: fi.Size(),
 	}, nil
-}
-
-func fileURLToPath(u *neturl.URL) (string, error) {
-	p := u.Path
-	if runtime.GOOS == "windows" {
-		if len(p) >= 3 && p[0] == '/' && p[2] == ':' {
-			p = p[1:]
-		}
-	}
-	return filepath.FromSlash(p), nil
 }
 
 // Module contains the module path and versions
