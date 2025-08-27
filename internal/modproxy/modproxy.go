@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	neturl "net/url"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -45,7 +45,7 @@ func Request(path string, cached bool) (*http.Response, error) {
 	return last, nil
 }
 
-func doProxyRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, error) {
+func doProxyRequest(u *url.URL, subpath string, cached bool) (*http.Response, error) {
 	switch u.Scheme {
 	case "http", "https":
 		return httpRequest(u, subpath, cached)
@@ -56,7 +56,7 @@ func doProxyRequest(u *neturl.URL, subpath string, cached bool) (*http.Response,
 	}
 }
 
-func httpRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, error) {
+func httpRequest(u *url.URL, subpath string, cached bool) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, u.JoinPath(subpath).String(), nil)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func httpRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, er
 	return http.DefaultClient.Do(req)
 }
 
-func fileRequest(u *neturl.URL, subpath string) (*http.Response, error) {
+func fileRequest(u *url.URL, subpath string) (*http.Response, error) {
 	root := u.Path
 	if filepath.VolumeName(root) != "" {
 		root, _ = strings.CutPrefix(root, "/")
