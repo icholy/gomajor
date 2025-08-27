@@ -32,8 +32,8 @@ func Request(path string, cached bool) (*http.Response, error) {
 		return nil, errors.New("no GOPROXY urls available")
 	}
 	var last *http.Response
-	for _, u := range proxies {
-		res, err := doProxyRequest(u, path, cached)
+	for _, proxy := range proxies {
+		res, err := doProxyRequest(proxy, path, cached)
 		if err != nil {
 			return nil, err
 		}
@@ -45,19 +45,19 @@ func Request(path string, cached bool) (*http.Response, error) {
 	return last, nil
 }
 
-func doProxyRequest(u *url.URL, subpath string, cached bool) (*http.Response, error) {
-	switch u.Scheme {
+func doProxyRequest(proxy *url.URL, path string, cached bool) (*http.Response, error) {
+	switch proxy.Scheme {
 	case "http", "https":
-		return httpRequest(u, subpath, cached)
+		return httpRequest(proxy, path, cached)
 	case "file":
-		return fileRequest(u, subpath)
+		return fileRequest(proxy, path)
 	default:
-		return nil, errors.New("unsupported protocol " + u.Scheme)
+		return nil, errors.New("unsupported protocol " + proxy.Scheme)
 	}
 }
 
-func httpRequest(u *url.URL, subpath string, cached bool) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, u.JoinPath(subpath).String(), nil)
+func httpRequest(proxy *url.URL, path string, cached bool) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, proxy.JoinPath(path).String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func httpRequest(u *url.URL, subpath string, cached bool) (*http.Response, error
 	return http.DefaultClient.Do(req)
 }
 
-func fileRequest(u *url.URL, subpath string) (*http.Response, error) {
-	root := u.Path
+func fileRequest(proxy *url.URL, subpath string) (*http.Response, error) {
+	root := proxy.Path
 	if filepath.VolumeName(root) != "" {
 		root, _ = strings.CutPrefix(root, "/")
 	}
