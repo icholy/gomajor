@@ -75,6 +75,11 @@ func TestGOPROXYURL(t *testing.T) {
 			setenv: "https://proxy.golang.org,,direct, ,https://custom.proxy.com",
 			want:   []*url.URL{{Scheme: "https", Host: "proxy.golang.org"}, {Scheme: "https", Host: "custom.proxy.com"}},
 		},
+		{
+			name:   "file:// proxy URL",
+			setenv: "file:///path/to/modules,https://proxy.golang.org",
+			want:   []*url.URL{{Scheme: "file", Path: "/path/to/modules"}, {Scheme: "https", Host: "proxy.golang.org"}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
