@@ -68,14 +68,14 @@ func httpRequest(proxy *url.URL, path string, cached bool) (*http.Response, erro
 	return http.DefaultClient.Do(req)
 }
 
-func fileRequest(proxy *url.URL, subpath string) (*http.Response, error) {
+func fileRequest(proxy *url.URL, path string) (*http.Response, error) {
 	root := proxy.Path
 	if filepath.VolumeName(root) != "" {
 		root, _ = strings.CutPrefix(root, "/")
 	}
 	f, err := os.Open(filepath.Join(
 		filepath.FromSlash(root),
-		filepath.FromSlash(subpath),
+		filepath.FromSlash(path),
 	))
 	if err != nil {
 		if os.IsNotExist(err) {
