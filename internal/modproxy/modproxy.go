@@ -57,11 +57,7 @@ func doProxyRequest(u *neturl.URL, subpath string, cached bool) (*http.Response,
 }
 
 func httpRequest(u *neturl.URL, subpath string, cached bool) (*http.Response, error) {
-	url, err := neturl.JoinPath(u.String(), subpath)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(http.MethodGet, u.JoinPath(subpath).String(), nil)
 	if err != nil {
 		return nil, err
 	}
