@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -19,11 +20,11 @@ func TestListCommand(t *testing.T) {
 	testscript.Run(t, testscript.Params{
 		Dir: "testdata/testscript/list",
 		Setup: func(env *testscript.Env) error {
-			proxy, err := testmodproxy.Load("testdata/modules")
+			proxyfs, err := testmodproxy.LoadFS("testdata/modules")
 			if err != nil {
 				return err
 			}
-			server := httptest.NewServer(proxy)
+			server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
 			env.Vars = append(env.Vars, "GOPROXY="+server.URL)
 			env.Defer(func() { server.Close() })
 			return nil

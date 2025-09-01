@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"maps"
-	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,32 +17,11 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-// ModuleProxy is a bare-bones Go module proxy for offline testing.
-// It preloads all module data into memory for fast serving.
-type ModuleProxy struct {
-	fs fstest.MapFS
-}
-
-// ServeHTTP implements http.Handler
-func (p *ModuleProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.ServeFileFS(w, r, p.FS(), r.URL.Path)
-}
-
-// WriteToDir writes the proxy contents to a directory in the format expected by file:// URLs.
-func (p *ModuleProxy) WriteToDir(dir string) error {
-	return os.CopyFS(dir, p.FS())
-}
-
-func LoadFS(rootDir string) (fs.FS, error) {
-	p, err := Load(rootDir)
-	if err != nil {
-		return nil, err
-	}
-	return p.FS(), nil
-}
-
-// Load creates a new TestModuleProxy that serves modules from the given directory.
-// The directory structure should be:
+// LoadFS creates a virtual filesystem that implements the Go module proxy protocol.
+// It scans a directory of module source code and automatically generates all the
+// necessary proxy files: /@v/list, /@v/{version}.mod, /@v/{version}.zip, and /@v/{version}.info.
+//
+// The input directory structure should be:
 // rootDir/
 //
 //	example.com/
@@ -57,14 +35,14 @@ func LoadFS(rootDir string) (fs.FS, error) {
 //	        go.mod
 //	        main.go
 //	        ...
-func Load(rootDir string) (*ModuleProxy, error) {
-	p := &ModuleProxy{
-		fs: fstest.MapFS{},
-	}
-
+//
+// The returned filesystem can be used with http.FileServer(http.FS(fsys)) to serve
+// a module proxy over HTTP, or with os.CopyFS(dir, fsys) to write the proxy files
+// to disk for use with file:// URLs.
+func LoadFS(rootDir string) (fs.FS, error) {
+	fsys := fstest.MapFS{}
 	// Track versions per module for generating list files
 	versions := make(map[string][]string)
-
 	// Walk the root directory to find all modules
 	err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -83,37 +61,30 @@ func Load(rootDir string) (*ModuleProxy, error) {
 		if !ok {
 			return nil // Must have /@v/ separator
 		}
-		// Load module file
 		modfile, err := os.ReadFile(filepath.Join(path, "go.mod"))
 		if err != nil {
 			return err
 		}
-		// Create zip file
-		zipdata, err := p.zip(path, modpath, version)
+		zipdata, err := zipmod(path, modpath, version)
 		if err != nil {
 			return err
 		}
-		// Escape module path
 		escaped, err := module.EscapePath(modpath)
 		if err != nil {
 			return err
 		}
-		// Track version for list generation
-		versions[escaped] = append(versions[escaped], version)
-		// Add files to MapFS
 		prefix := escaped + "/@v/" + version
-		maps.Copy(p.fs, fstest.MapFS{
+		maps.Copy(fsys, fstest.MapFS{
 			prefix + ".mod":  {Data: modfile},
 			prefix + ".zip":  {Data: zipdata},
 			prefix + ".info": {Data: fmt.Appendf(nil, `{"Version":"%s","Time":"2023-01-01T00:00:00Z"}`, version)},
 		})
+		versions[escaped] = append(versions[escaped], version)
 		return filepath.SkipDir
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	// Generate list files for each module
 	for escaped, versions := range versions {
 		var list bytes.Buffer
 		slices.SortFunc(versions, semver.Compare)
@@ -121,17 +92,12 @@ func Load(rootDir string) (*ModuleProxy, error) {
 			list.WriteString(version)
 			list.WriteByte('\n')
 		}
-		p.fs[escaped+"/@v/list"] = &fstest.MapFile{Data: list.Bytes()}
+		fsys[escaped+"/@v/list"] = &fstest.MapFile{Data: list.Bytes()}
 	}
-
-	return p, nil
+	return fsys, nil
 }
 
-func (p *ModuleProxy) FS() fs.FS {
-	return p.fs
-}
-
-func (p *ModuleProxy) zip(dir, modpath, version string) ([]byte, error) {
+func zipmod(dir, modpath, version string) ([]byte, error) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {

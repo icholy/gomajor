@@ -1,7 +1,9 @@
 package modproxy
 
 import (
+	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"testing"
 
@@ -236,14 +238,14 @@ func TestVersionRange(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	// Start the test mod proxy
-	proxy, err := testmodproxy.Load("testdata/modules")
+	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer(proxy)
+	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
 	defer server.Close()
 	proxydir := t.TempDir()
-	if err := proxy.WriteToDir(proxydir); err != nil {
+	if err := os.CopyFS(proxydir, proxyfs); err != nil {
 		t.Fatal(err)
 	}
 
@@ -300,14 +302,14 @@ func TestQuery(t *testing.T) {
 
 func TestLatest(t *testing.T) {
 	// Start the test mod proxy
-	proxy, err := testmodproxy.Load("testdata/modules")
+	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer(proxy)
+	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
 	defer server.Close()
 	proxydir := t.TempDir()
-	if err := proxy.WriteToDir(proxydir); err != nil {
+	if err := os.CopyFS(proxydir, proxyfs); err != nil {
 		t.Fatal(err)
 	}
 
@@ -374,14 +376,14 @@ func TestLatest(t *testing.T) {
 
 func TestQueryPackage(t *testing.T) {
 	// Start the test mod proxy
-	proxy, err := testmodproxy.Load("testdata/modules")
+	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer(proxy)
+	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
 	defer server.Close()
 	proxydir := t.TempDir()
-	if err := proxy.WriteToDir(proxydir); err != nil {
+	if err := os.CopyFS(proxydir, proxyfs); err != nil {
 		t.Fatal(err)
 	}
 
