@@ -34,6 +34,14 @@ func (p *ModuleProxy) WriteToDir(dir string) error {
 	return os.CopyFS(dir, p.FS())
 }
 
+func LoadFS(rootDir string) (fs.FS, error) {
+	p, err := Load(rootDir)
+	if err != nil {
+		return nil, err
+	}
+	return p.FS(), nil
+}
+
 // Load creates a new TestModuleProxy that serves modules from the given directory.
 // The directory structure should be:
 // rootDir/
