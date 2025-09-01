@@ -10,6 +10,28 @@ import (
 	"github.com/icholy/gomajor/internal/modproxy/testmodproxy"
 )
 
+type testProxy struct {
+	name string
+	url  string
+}
+
+func loadTestProxies(t *testing.T) []testProxy {
+	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
+	t.Cleanup(func() { server.Close() })
+	proxydir := t.TempDir()
+	if err := os.CopyFS(proxydir, proxyfs); err != nil {
+		t.Fatal(err)
+	}
+	return []testProxy{
+		{name: "http", url: server.URL},
+		{name: "file", url: "file://" + proxydir},
+	}
+}
+
 func TestModule(t *testing.T) {
 	tests := []struct {
 		mod      *Module
@@ -237,26 +259,6 @@ func TestVersionRange(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	// Start the test mod proxy
-	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
-	if err != nil {
-		t.Fatal(err)
-	}
-	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
-	defer server.Close()
-	proxydir := t.TempDir()
-	if err := os.CopyFS(proxydir, proxyfs); err != nil {
-		t.Fatal(err)
-	}
-
-	proxies := []struct {
-		name string
-		url  string
-	}{
-		{name: "http", url: server.URL},
-		{name: "file", url: "file://" + proxydir},
-	}
-
 	tests := []struct {
 		name    string
 		modpath string
@@ -278,7 +280,7 @@ func TestQuery(t *testing.T) {
 			exist:   false,
 		},
 	}
-
+	proxies := loadTestProxies(t)
 	for _, proxy := range proxies {
 		t.Run(proxy.name, func(t *testing.T) {
 			t.Setenv("GOPROXY", proxy.url)
@@ -301,26 +303,6 @@ func TestQuery(t *testing.T) {
 }
 
 func TestLatest(t *testing.T) {
-	// Start the test mod proxy
-	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
-	if err != nil {
-		t.Fatal(err)
-	}
-	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
-	defer server.Close()
-	proxydir := t.TempDir()
-	if err := os.CopyFS(proxydir, proxyfs); err != nil {
-		t.Fatal(err)
-	}
-
-	proxies := []struct {
-		name string
-		url  string
-	}{
-		{name: "http", url: server.URL},
-		{name: "file", url: "file://" + proxydir},
-	}
-
 	tests := []struct {
 		name    string
 		modpath string
@@ -355,7 +337,7 @@ func TestLatest(t *testing.T) {
 			},
 		},
 	}
-
+	proxies := loadTestProxies(t)
 	for _, proxy := range proxies {
 		t.Run(proxy.name, func(t *testing.T) {
 			t.Setenv("GOPROXY", proxy.url)
@@ -375,26 +357,6 @@ func TestLatest(t *testing.T) {
 }
 
 func TestQueryPackage(t *testing.T) {
-	// Start the test mod proxy
-	proxyfs, err := testmodproxy.LoadFS("testdata/modules")
-	if err != nil {
-		t.Fatal(err)
-	}
-	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
-	defer server.Close()
-	proxydir := t.TempDir()
-	if err := os.CopyFS(proxydir, proxyfs); err != nil {
-		t.Fatal(err)
-	}
-
-	proxies := []struct {
-		name string
-		url  string
-	}{
-		{name: "http", url: server.URL},
-		{name: "file", url: "file://" + proxydir},
-	}
-
 	tests := []struct {
 		name    string
 		pkgpath string
@@ -417,7 +379,7 @@ func TestQueryPackage(t *testing.T) {
 			},
 		},
 	}
-
+	proxies := loadTestProxies(t)
 	for _, proxy := range proxies {
 		t.Run(proxy.name, func(t *testing.T) {
 			t.Setenv("GOPROXY", proxy.url)
