@@ -42,7 +42,7 @@ import (
 func LoadFS(rootDir string) (fs.FS, error) {
 	fsys := fstest.MapFS{}
 	// Track versions per module for generating list files
-	versions := make(map[string][]string)
+	versions := map[string][]string{}
 	// Walk the root directory to find all modules
 	err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
