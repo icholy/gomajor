@@ -75,25 +75,23 @@ func Load(rootDir string) (*ModuleProxy, error) {
 		if !ok {
 			return nil // Must have /@v/ separator
 		}
-
 		// Load module file
 		modfile, err := os.ReadFile(filepath.Join(path, "go.mod"))
 		if err != nil {
 			return err
 		}
-
 		// Create zip file
 		zipdata, err := p.zip(path, modpath, version)
 		if err != nil {
 			return err
 		}
-
 		// Escape module path
 		escaped, err := module.EscapePath(modpath)
 		if err != nil {
 			return err
 		}
-
+		// Track version for list generation
+		versions[escaped] = append(versions[escaped], version)
 		// Add files to MapFS
 		prefix := escaped + "/@v/" + version
 		maps.Copy(p.fs, fstest.MapFS{
@@ -101,10 +99,6 @@ func Load(rootDir string) (*ModuleProxy, error) {
 			prefix + ".zip":  {Data: zipdata},
 			prefix + ".info": {Data: fmt.Appendf(nil, `{"Version":"%s","Time":"2023-01-01T00:00:00Z"}`, version)},
 		})
-
-		// Track version for list generation
-		versions[escaped] = append(versions[escaped], version)
-
 		return filepath.SkipDir
 	})
 	if err != nil {
