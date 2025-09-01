@@ -21,19 +21,7 @@ import (
 // ModuleProxy is a bare-bones Go module proxy for offline testing.
 // It preloads all module data into memory for fast serving.
 type ModuleProxy struct {
-	Modules map[string]*Module
-}
-
-type Module struct {
-	Path     string
-	List     []byte
-	Versions map[string]*ModuleVersion
-}
-
-type ModuleVersion struct {
-	Version string
-	Mod     []byte
-	Zip     []byte
+	fs fstest.MapFS
 }
 
 // ServeHTTP implements http.Handler
@@ -63,8 +51,12 @@ func (p *ModuleProxy) WriteToDir(dir string) error {
 //	        ...
 func Load(rootDir string) (*ModuleProxy, error) {
 	p := &ModuleProxy{
-		Modules: make(map[string]*Module),
+		fs: fstest.MapFS{},
 	}
+
+	// Track versions per module for generating list files
+	versions := make(map[string][]string)
+
 	// Walk the root directory to find all modules
 	err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -83,63 +75,58 @@ func Load(rootDir string) (*ModuleProxy, error) {
 		if !ok {
 			return nil // Must have /@v/ separator
 		}
+
 		// Load module file
 		modfile, err := os.ReadFile(filepath.Join(path, "go.mod"))
 		if err != nil {
 			return err
 		}
+
 		// Create zip file
 		zipdata, err := p.zip(path, modpath, version)
 		if err != nil {
 			return err
 		}
-		// Add version
-		if p.Modules[modpath] == nil {
-			p.Modules[modpath] = &Module{
-				Path:     modpath,
-				Versions: map[string]*ModuleVersion{},
-			}
+
+		// Escape module path
+		escaped, err := module.EscapePath(modpath)
+		if err != nil {
+			return err
 		}
-		p.Modules[modpath].Versions[version] = &ModuleVersion{
-			Version: version,
-			Mod:     modfile,
-			Zip:     zipdata,
-		}
+
+		// Add files to MapFS
+		prefix := escaped + "/@v/" + version
+		maps.Copy(p.fs, fstest.MapFS{
+			prefix + ".mod":  {Data: modfile},
+			prefix + ".zip":  {Data: zipdata},
+			prefix + ".info": {Data: fmt.Appendf(nil, `{"Version":"%s","Time":"2023-01-01T00:00:00Z"}`, version)},
+		})
+
+		// Track version for list generation
+		versions[escaped] = append(versions[escaped], version)
+
 		return filepath.SkipDir
 	})
 	if err != nil {
 		return nil, err
 	}
-	// Generate list data for each module
-	for _, mod := range p.Modules {
+
+	// Generate list files for each module
+	for escaped, versions := range versions {
 		var list bytes.Buffer
-		for _, version := range slices.SortedFunc(maps.Keys(mod.Versions), semver.Compare) {
+		slices.SortFunc(versions, semver.Compare)
+		for _, version := range versions {
 			list.WriteString(version)
 			list.WriteByte('\n')
 		}
-		mod.List = list.Bytes()
+		p.fs[escaped+"/@v/list"] = &fstest.MapFile{Data: list.Bytes()}
 	}
+
 	return p, nil
 }
 
 func (p *ModuleProxy) FS() fs.FS {
-	files := fstest.MapFS{}
-	for modpath, mod := range p.Modules {
-		escaped, err := module.EscapePath(modpath)
-		if err != nil {
-			continue
-		}
-		files[escaped+"/@v/list"] = &fstest.MapFile{Data: mod.List}
-		for version, ver := range mod.Versions {
-			prefix := escaped + "/@v/" + version
-			maps.Copy(files, fstest.MapFS{
-				prefix + ".mod":  {Data: ver.Mod},
-				prefix + ".zip":  {Data: ver.Zip},
-				prefix + ".info": {Data: fmt.Appendf(nil, `{"Version":"%s","Time":"2023-01-01T00:00:00Z"}`, version)},
-			})
-		}
-	}
-	return files
+	return p.fs
 }
 
 func (p *ModuleProxy) zip(dir, modpath, version string) ([]byte, error) {
