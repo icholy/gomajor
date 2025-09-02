@@ -7,15 +7,43 @@ import (
 	"io"
 	"io/fs"
 	"maps"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"testing"
 	"testing/fstest"
 
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 )
+
+// Proxy is a named test proxy url.
+type Proxy struct {
+	Name string
+	URL  string
+}
+
+// LoadProxies creates an http:// and file:// proxy for testing.
+// See LoadFS for input directory format.
+func LoadProxies(t *testing.T, rootDir string) []Proxy {
+	proxyfs, err := LoadFS(rootDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.FileServer(http.FS(proxyfs)))
+	t.Cleanup(func() { server.Close() })
+	proxydir := t.TempDir()
+	if err := os.CopyFS(proxydir, proxyfs); err != nil {
+		t.Fatal(err)
+	}
+	return []Proxy{
+		{Name: "http", URL: server.URL},
+		{Name: "file", URL: "file://" + proxydir},
+	}
+}
 
 // LoadFS creates a virtual filesystem that implements the Go module proxy protocol.
 // It scans a directory of module source code and automatically generates all the
